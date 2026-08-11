@@ -1,12 +1,12 @@
 {
-  "version": "1.0.10",
-  "versionCode": 1010,
-  "desc": "发布1.0.10版\n1.发布服务器共享功能（服务器需搭配升cloudflare 平台服务器的最新版代码）\n2.修复若干bug\n3.修复部分样式问题\n———————————————————————\n下个版本1.0.11开发计划：\n1.修复已知bug,完善现有功能",
-  "releaseUrl": "",
+  "version": "1.0.11",
+  "versionCode": 1011,
+  "desc": "发布1.0.11版\n1.新增听歌识曲功能(需要搭配cloudflare 最新版本服务器)\n2.修复AI推荐歌曲功能重复率过高问题\n3.修复鼠标右键不能粘贴问题\n4.修复若干小bug\n———————————————————————\n下个版本1.0.12开发计划：\n1.完善用户登录体系，并完成用户数据的云同步功能", 
+  "releaseUrl": "https://github.com/erikjamesgz/phg-music/releases",
   "projectUrl": "https://github.com/erikjamesgz/phg-music",
   "platforms": {
     "android": {
-      "downloadUrl": "https://github.com/erikjamesgz/phg-music/releases/download/phg-music-v1.0.10-release/phg-music-android-v1.0.10-release-20260722.apk"
+      "downloadUrl": "https://github.com/erikjamesgz/phg-music/releases/download/phg-music-v1.0.11-release/phg-music-android-v1.0.11-release-20260811.apk"
     },
     "ios": {
       "downloadUrl": ""

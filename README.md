@@ -388,7 +388,9 @@ iOS 和纯血鸿蒙系统用户需要使用微信开发者工具编译项目。
 - **QQ 群号**：1016773775
 - **扫码加群**：
 
-<img src="doc/images/qrcode_1786414821546.jpg" alt="QQ群二维码" width="200"/>
+<div align="center">
+  <img src="doc/images/qrcode_1786414821546.jpg" alt="QQ群二维码" width="200"/>
+</div>
 
 ## ⚠️ 重要提示
 
