@@ -6,7 +6,7 @@
     "backgroundTextStyle": "dark",
     "tabBarColor": "#8a8a8a",
     "tabBarSelectedColor": "#00afff",
-    "tabBarBorderStyle": "#ffffff",
+    "tabBarBorderStyle": "white",
     "tabBarBackgroundColor": "#ffffff"
   },
   "dark": {
@@ -16,7 +16,7 @@
     "backgroundTextStyle": "light",
     "tabBarColor": "#9ca3af",
     "tabBarSelectedColor": "#00d7cd",
-    "tabBarBorderStyle": "#1f2937",
+    "tabBarBorderStyle": "black",
     "tabBarBackgroundColor": "#1f2937"
   }
 }

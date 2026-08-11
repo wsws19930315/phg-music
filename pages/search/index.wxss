@@ -163,6 +163,23 @@ to {
 .clear-icon {
   padding: 6px;
 }
+
+/* 搜索框内的听歌识曲按钮 */
+.recognize-btn-inline {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: -4px;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.recognize-btn-inline:active {
+  transform: scale(0.9);
+  background-color: rgba(0, 0, 0, 0.05);
+}
 .search-btn {
   font-size: 14px;
   color: #666666;

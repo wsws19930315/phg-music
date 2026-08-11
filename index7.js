@@ -12,6 +12,10 @@ const utils_config = require("./utils/config.js");
 const utils_storage = require("./utils/storage.js");
 const utils_musicPic = require("./utils/musicPic.js");
 const utils_imageProxy = require("./utils/imageProxy.js");
+const utils_aiRecommendFilter = require("./utils/aiRecommendFilter.js");
+const utils_aiRecommendSearch = require("./utils/aiRecommendSearch.js");
+const utils_aiRecommendPrompt = require("./utils/aiRecommendPrompt.js");
+const utils_hotSearchCache = require("./utils/hotSearchCache.js");
 if (!Math) {
   RocIconPlus();
 }
@@ -557,7 +561,7 @@ const _sfc_main = {
         }, 350);
       });
     };
-    const hasActivePreferences = common_vendor.computed(
+    common_vendor.computed(
       () => (
         // 固定场景模式：有任一选项被选中
         prefMode.value === "fixed" && (selectedScene.value >= 0 || selectedExplore.value >= 0 || selectedEra.value >= 0 || selectedLang.value >= 0) || // 自定义模式：有输入内容
@@ -756,37 +760,42 @@ const _sfc_main = {
             try {
               const loveList2 = utils_storage.getStorage("@list_love", []) || [];
               if (Array.isArray(loveList2) && loveList2.length > 0) {
-                favoriteSongs2 = loveList2;
+                favoriteSongs2 = [...loveList2];
               }
             } catch (e) {
             }
-            if (favoriteSongs2.length === 0) {
-              try {
-                const importedRaw = common_vendor.index.getStorageSync("imported_playlists");
-                const importedPlaylists = typeof importedRaw === "string" ? JSON.parse(importedRaw) : Array.isArray(importedRaw) ? importedRaw : [];
-                if (Array.isArray(importedPlaylists)) {
-                  for (const playlist of importedPlaylists) {
-                    if (playlist.songs && Array.isArray(playlist.songs)) {
-                      favoriteSongs2 = [...favoriteSongs2, ...playlist.songs];
-                    }
+            try {
+              const importedRaw = common_vendor.index.getStorageSync("imported_playlists");
+              const importedPlaylists = typeof importedRaw === "string" ? JSON.parse(importedRaw) : Array.isArray(importedRaw) ? importedRaw : [];
+              if (Array.isArray(importedPlaylists)) {
+                for (const playlist of importedPlaylists) {
+                  if (playlist.songs && Array.isArray(playlist.songs)) {
+                    favoriteSongs2 = [...favoriteSongs2, ...playlist.songs];
                   }
                 }
-              } catch (e) {
               }
+            } catch (e) {
             }
-            if (favoriteSongs2.length === 0) {
-              try {
-                const userLists = utils_storage.getStorage("@user_lists", []) || [];
-                if (Array.isArray(userLists)) {
-                  for (const list of userLists) {
-                    if (list.list && Array.isArray(list.list)) {
-                      favoriteSongs2 = [...favoriteSongs2, ...list.list];
-                    }
+            try {
+              const userLists = utils_storage.getStorage("@user_lists", []) || [];
+              if (Array.isArray(userLists)) {
+                for (const list of userLists) {
+                  if (list.list && Array.isArray(list.list)) {
+                    favoriteSongs2 = [...favoriteSongs2, ...list.list];
                   }
                 }
-              } catch (e) {
               }
+            } catch (e) {
             }
+            const seenFavKeys2 = /* @__PURE__ */ new Set();
+            favoriteSongs2 = favoriteSongs2.filter((song) => {
+              var _a2, _b2;
+              const key = `${(song.name || "").trim()}-${(song.singer || ((_b2 = (_a2 = song.ar) == null ? void 0 : _a2[0]) == null ? void 0 : _b2.name) || "").trim()}`;
+              if (seenFavKeys2.has(key))
+                return false;
+              seenFavKeys2.add(key);
+              return true;
+            });
             cachedUserData.totalFavoriteCount = favoriteSongs2.length;
             cachedUserData.favoriteSongs = favoriteSongs2.slice(0, 50).map((song) => {
               var _a2, _b2;
@@ -860,43 +869,72 @@ const _sfc_main = {
           userData = {};
         }
         let favoriteSongs = [];
-        console.log("[AIRecommend] 🎯 开始读取收藏列表...");
+        console.log("[AIRecommend] 🎯 开始读取收藏列表（累加所有来源）...");
         const loveList = utils_storage.getStorage("@list_love", []) || [];
         console.log("[AIRecommend] 📦 @list_love 解析结果: 是否数组:", Array.isArray(loveList), "数量:", Array.isArray(loveList) ? loveList.length : "N/A");
         if (Array.isArray(loveList) && loveList.length > 0) {
-          favoriteSongs = loveList;
-          console.log("[AIRecommend] ❤️ 从@list_love获取收藏:", favoriteSongs.length, "首");
+          favoriteSongs = [...loveList];
+          console.log("[AIRecommend] ❤️ 从@list_love获取收藏:", loveList.length, "首");
         } else {
-          console.log("[AIRecommend] ⚠️ @list_love 为空，尝试其他方式...");
           try {
             const loveListFromStore = store_modules_list.listStore.getList(store_modules_list.LIST_IDS.LOVE);
             if (loveListFromStore && Array.isArray(loveListFromStore) && loveListFromStore.length > 0) {
-              favoriteSongs = loveListFromStore;
-              console.log("[AIRecommend] ✅ 从listStore获取到:", favoriteSongs.length, "首");
+              favoriteSongs = [...loveListFromStore];
+              console.log("[AIRecommend] ✅ 从listStore获取到:", loveListFromStore.length, "首");
             }
           } catch (e) {
             console.warn("[AIRecommend] listStore读取失败:", e.message);
           }
-          if (favoriteSongs.length === 0) {
-            try {
-              const importedRaw = common_vendor.index.getStorageSync("imported_playlists");
-              const importedPlaylists = typeof importedRaw === "string" ? JSON.parse(importedRaw) : Array.isArray(importedRaw) ? importedRaw : [];
-              if (Array.isArray(importedPlaylists) && importedPlaylists.length > 0) {
-                for (const playlist of importedPlaylists) {
-                  if (playlist.songs && playlist.songs.length > 0) {
-                    favoriteSongs = [...favoriteSongs, ...playlist.songs];
-                  }
-                }
-                console.log("[AIRecommend] ✅ 从导入歌单收集到:", favoriteSongs.length, "首");
-              }
-            } catch (e) {
-              console.error("[AIRecommend] 导入歌单读取失败:", e);
-            }
-          }
         }
+        try {
+          const importedRaw = common_vendor.index.getStorageSync("imported_playlists");
+          const importedPlaylists = typeof importedRaw === "string" ? JSON.parse(importedRaw) : Array.isArray(importedRaw) ? importedRaw : [];
+          if (Array.isArray(importedPlaylists) && importedPlaylists.length > 0) {
+            let importedCount = 0;
+            for (const playlist of importedPlaylists) {
+              if (playlist.songs && playlist.songs.length > 0) {
+                favoriteSongs = [...favoriteSongs, ...playlist.songs];
+                importedCount += playlist.songs.length;
+              }
+            }
+            console.log("[AIRecommend] ✅ 从导入歌单累加:", importedCount, "首，当前总计:", favoriteSongs.length, "首");
+          }
+        } catch (e) {
+          console.error("[AIRecommend] 导入歌单读取失败:", e);
+        }
+        try {
+          const userLists = utils_storage.getStorage("@user_lists", []) || [];
+          if (Array.isArray(userLists) && userLists.length > 0) {
+            let customCount = 0;
+            for (const list of userLists) {
+              if (list.list && Array.isArray(list.list) && list.list.length > 0) {
+                favoriteSongs = [...favoriteSongs, ...list.list];
+                customCount += list.list.length;
+              }
+            }
+            console.log("[AIRecommend] ✅ 从自定义歌单累加:", customCount, "首，当前总计:", favoriteSongs.length, "首");
+          }
+        } catch (e) {
+          console.error("[AIRecommend] 自定义歌单读取失败:", e);
+        }
+        const seenFavKeys = /* @__PURE__ */ new Set();
+        favoriteSongs = favoriteSongs.filter((song) => {
+          var _a2, _b2;
+          const key = `${(song.name || "").trim()}-${(song.singer || ((_b2 = (_a2 = song.ar) == null ? void 0 : _a2[0]) == null ? void 0 : _b2.name) || "").trim()}`;
+          if (seenFavKeys.has(key))
+            return false;
+          seenFavKeys.add(key);
+          return true;
+        });
+        console.log("[AIRecommend] 📊 去重后收藏总计:", favoriteSongs.length, "首");
         if (favoriteSongs.length > 0) {
           userData.totalFavoriteCount = favoriteSongs.length;
-          userData.favoriteSongs = favoriteSongs.slice(0, 500).map((song, index) => {
+          const maxFavSample = 500;
+          let sampledFavorites = favoriteSongs;
+          if (favoriteSongs.length > maxFavSample) {
+            sampledFavorites = [...favoriteSongs].sort(() => Math.random() - 0.5).slice(0, maxFavSample);
+          }
+          userData.favoriteSongs = sampledFavorites.map((song, index) => {
             var _a2, _b2;
             const playRecord = common_vendor.index.getStorageSync(`playRecord_${song.id}`);
             if (index < 10) {
@@ -943,7 +981,14 @@ const _sfc_main = {
             playHistoryArr = rawPlayHistory;
           }
           if (playHistoryArr.length > 0) {
-            userData.playHistory = playHistoryArr.slice(0, 200).map((song) => {
+            const maxHistorySample = 200;
+            let sampledHistory = playHistoryArr;
+            if (playHistoryArr.length > maxHistorySample) {
+              const recent20 = playHistoryArr.slice(0, 20);
+              const restShuffled = playHistoryArr.slice(20).sort(() => Math.random() - 0.5).slice(0, maxHistorySample - 20);
+              sampledHistory = [...recent20, ...restShuffled];
+            }
+            userData.playHistory = sampledHistory.map((song) => {
               const songId = String(song.id || "");
               const playRecord = songId ? common_vendor.index.getStorageSync(`playRecord_${songId}`) : null;
               return {
@@ -1008,6 +1053,27 @@ const _sfc_main = {
         } catch (error) {
           console.error("[AIRecommend] ❌ 读取历史AI推荐记录失败:", error);
           userData.historyRecommendedSongs = [];
+        }
+        try {
+          const rawDislikeList = common_vendor.index.getStorageSync("dislikeList");
+          let dislikeArr = [];
+          if (typeof rawDislikeList === "string") {
+            try {
+              dislikeArr = JSON.parse(rawDislikeList) || [];
+            } catch (e) {
+              dislikeArr = [];
+            }
+          } else if (Array.isArray(rawDislikeList)) {
+            dislikeArr = rawDislikeList;
+          }
+          userData.dislikeList = dislikeArr.map((item) => ({
+            name: item.name || "",
+            singer: item.singer || ""
+          })).filter((item) => item.name);
+          console.log("[AIRecommend] 👎 不喜欢歌曲:", userData.dislikeList.length, "首:", userData.dislikeList.map((s) => `${s.name}-${s.singer}`).join("、"));
+        } catch (e) {
+          console.warn("[AIRecommend] 读取不喜欢列表失败:", e.message);
+          userData.dislikeList = [];
         }
         const hasValidUserData = userData && (userData.playHistory && userData.playHistory.length > 0 || userData.favoriteSongs && userData.favoriteSongs.length > 0 || userData.dislikeList && userData.dislikeList.length > 0 || userData.topArtists && userData.topArtists.length > 0 || userData.historyRecommendedSongs && userData.historyRecommendedSongs.length > 0);
         if (!hasValidUserData) {
@@ -1082,7 +1148,7 @@ const _sfc_main = {
             _originalIndex: index
           }));
           try {
-            console.log("[AIRecommend] 📊 开始检测推荐结果重复率...");
+            console.log("[AIRecommend] 📊 开始检测重复率（仅检测播放历史+收藏）...");
             const excludedSongsSet = /* @__PURE__ */ new Set();
             if (userData.playHistory && Array.isArray(userData.playHistory)) {
               userData.playHistory.forEach((song) => {
@@ -1093,13 +1159,6 @@ const _sfc_main = {
             }
             if (userData.favoriteSongs && Array.isArray(userData.favoriteSongs)) {
               userData.favoriteSongs.forEach((song) => {
-                if (song && song.name && song.singer) {
-                  excludedSongsSet.add(`${song.name}-${song.singer}`.toLowerCase());
-                }
-              });
-            }
-            if (userData.historyRecommendedSongs && Array.isArray(userData.historyRecommendedSongs)) {
-              userData.historyRecommendedSongs.forEach((song) => {
                 if (song && song.name && song.singer) {
                   excludedSongsSet.add(`${song.name}-${song.singer}`.toLowerCase());
                 }
@@ -1120,33 +1179,20 @@ const _sfc_main = {
               }
             });
             const duplicateRate = duplicateCount / totalCount * 100;
-            console.log(`[AIRecommend] 📊 重复率检测结果：`);
+            console.log(`[AIRecommend] 📊 重复率检测结果（仅播放历史+收藏）：`);
             console.log(`  ├─ 总歌曲数: ${totalCount}首`);
-            console.log(`  ├─ 重复数量: ${duplicateCount}首`);
+            console.log(`  ├─ 与播放历史/收藏重复: ${duplicateCount}首`);
             console.log(`  └─ 重复率: ${duplicateRate.toFixed(1)}%`);
             if (duplicateSongs.length > 0) {
-              console.log(`[AIRecommend] 📋 重复歌曲示例（前10首）:`);
+              console.log(`[AIRecommend] 📋 与播放/收藏重复的歌曲（前10首）:`);
               duplicateSongs.forEach((song, index) => {
                 console.log(`  ${index + 1}. ${song}`);
               });
             }
             if (duplicateRate > 60) {
-              console.warn(`[AIRecommend] ⚠️ 重复率${duplicateRate.toFixed(1)}%超过60%阈值，准备刷新推荐...`);
-              const maxRetries = 3;
-              const currentRetry = loadRecommendData._retryCount || 0;
-              if (currentRetry < maxRetries) {
-                loadRecommendData._retryCount = currentRetry + 1;
-                console.warn(`[AIRecommend] 🔄 第${currentRetry + 1}次刷新推荐（最多${maxRetries}次）...`);
-                await new Promise((resolve) => setTimeout(resolve, 500));
-                return await loadRecommendData(forceRefresh, skipProfileRefresh);
-              } else {
-                console.error(`[AIRecommend] ❌ 已达到最大重试次数(${maxRetries}次)，使用当前结果`);
-                console.error("[AIRecommend] 💡 建议：可能需要优化提示词或更换AI模型");
-                loadRecommendData._retryCount = 0;
-              }
+              console.warn(`[AIRecommend] ⚠️ 重复率${duplicateRate.toFixed(1)}%（仅参考，后端模式不自动刷新）`);
             } else {
-              console.log(`[AIRecommend] ✅ 重复率${duplicateRate.toFixed(1)}%在可接受范围内（<=60%）`);
-              loadRecommendData._retryCount = 0;
+              console.log(`[AIRecommend] ✅ 重复率正常`);
             }
           } catch (detectError) {
             console.error("[AIRecommend] ❌ 重复率检测失败:", detectError);
@@ -1221,7 +1267,23 @@ const _sfc_main = {
         stopLoadingAnimation();
         isLoading.value = false;
         hasError.value = true;
-        errorMessage.value = error.message || "加载失败";
+        const errMsg = error.message || "加载失败";
+        let errorTitle = "AI推荐失败";
+        let errorContent = errMsg;
+        if (errMsg.includes("4006") || errMsg.includes("neurons") || errMsg.includes("free allocation")) {
+          errorTitle = "今日AI额度已用完";
+          errorContent = "今天的AI推荐额度已用完啦，请明天再试 😊\n\n（Cloudflare Workers AI 免费额度每天自动重置）";
+        } else if (errMsg.includes("AI关键词生成失败") || errMsg.includes("AI排序失败")) {
+          errorTitle = "AI服务暂时不可用";
+          errorContent = "AI服务暂时不可用，请稍后重试\n\n详情：" + errMsg.substring(0, 100);
+        }
+        errorMessage.value = errorContent;
+        common_vendor.index.showModal({
+          title: errorTitle,
+          content: errorContent,
+          showCancel: false,
+          confirmText: "知道了"
+        });
       }
     };
     const isToday = (dateString) => {
@@ -1421,7 +1483,9 @@ const _sfc_main = {
               return cachedSong;
             }
             return {
-              id: s._aiId || s.id || `ai_${i}_${Date.now()}`,
+              id: s.id || s._aiId || `ai_${i}_${Date.now()}`,
+              songmid: s.songmid || "",
+              hash: s.hash || "",
               name: s.name,
               singer: s.singer,
               ar: s.ar || [{ name: s.singer }],
@@ -1670,14 +1734,16 @@ const _sfc_main = {
             };
           }
           return {
-            id: s._aiId || `ai_${i}_${Date.now()}`,
+            id: s.id || s._aiId || `ai_${i}_${Date.now()}`,
+            songmid: s.songmid || "",
+            hash: s.hash || "",
             name: s.name,
             singer: s.singer,
             ar: [{ name: s.singer }],
             al: { name: s.album || "" },
             album: { name: s.album || "" },
-            source: "ai_pending",
-            // 标记待搜索
+            source: s.source || "ai_pending",
+            // 有真实source就不标记为pending
             duration: parseDuration(s.duration),
             _isAiSong: true,
             _aiOriginalSong: s,
@@ -1955,43 +2021,55 @@ const _sfc_main = {
         try {
           const loveList = utils_storage.getStorage("@list_love", []) || [];
           if (Array.isArray(loveList) && loveList.length > 0) {
-            favoriteSongs = loveList;
-            console.log("[AIRecommend] 🔄 刷新画像 - 从@list_love获取:", favoriteSongs.length, "首");
+            favoriteSongs = [...loveList];
+            console.log("[AIRecommend] 🔄 刷新画像 - 从@list_love获取:", loveList.length, "首");
           }
         } catch (e) {
           console.warn("[AIRecommend] 刷新画像 - @list_love读取失败");
         }
-        if (favoriteSongs.length === 0) {
-          try {
-            const importedRaw = common_vendor.index.getStorageSync("imported_playlists");
-            const importedPlaylists = typeof importedRaw === "string" ? JSON.parse(importedRaw) : Array.isArray(importedRaw) ? importedRaw : [];
-            if (Array.isArray(importedPlaylists)) {
-              for (const playlist of importedPlaylists) {
-                if (playlist.songs && Array.isArray(playlist.songs)) {
-                  favoriteSongs = [...favoriteSongs, ...playlist.songs];
-                }
+        try {
+          const importedRaw = common_vendor.index.getStorageSync("imported_playlists");
+          const importedPlaylists = typeof importedRaw === "string" ? JSON.parse(importedRaw) : Array.isArray(importedRaw) ? importedRaw : [];
+          if (Array.isArray(importedPlaylists)) {
+            let importedCount = 0;
+            for (const playlist of importedPlaylists) {
+              if (playlist.songs && Array.isArray(playlist.songs)) {
+                favoriteSongs = [...favoriteSongs, ...playlist.songs];
+                importedCount += playlist.songs.length;
               }
-              console.log("[AIRecommend] 🔄 刷新画像 - 从导入歌单获取:", favoriteSongs.length, "首");
             }
-          } catch (e) {
-            console.warn("[AIRecommend] 刷新画像 - 导入歌单读取失败");
+            if (importedCount > 0)
+              console.log("[AIRecommend] 🔄 刷新画像 - 从导入歌单累加:", importedCount, "首");
           }
+        } catch (e) {
+          console.warn("[AIRecommend] 刷新画像 - 导入歌单读取失败");
         }
-        if (favoriteSongs.length === 0) {
-          try {
-            const userLists = utils_storage.getStorage("@user_lists", []) || [];
-            if (Array.isArray(userLists)) {
-              for (const list of userLists) {
-                if (list.list && Array.isArray(list.list)) {
-                  favoriteSongs = [...favoriteSongs, ...list.list];
-                }
+        try {
+          const userLists = utils_storage.getStorage("@user_lists", []) || [];
+          if (Array.isArray(userLists)) {
+            let customCount = 0;
+            for (const list of userLists) {
+              if (list.list && Array.isArray(list.list)) {
+                favoriteSongs = [...favoriteSongs, ...list.list];
+                customCount += list.list.length;
               }
-              console.log("[AIRecommend] 🔄 刷新画像 - 从用户列表获取:", favoriteSongs.length, "首");
             }
-          } catch (e) {
-            console.warn("[AIRecommend] 刷新画像 - 用户列表读取失败");
+            if (customCount > 0)
+              console.log("[AIRecommend] 🔄 刷新画像 - 从自定义歌单累加:", customCount, "首");
           }
+        } catch (e) {
+          console.warn("[AIRecommend] 刷新画像 - 用户列表读取失败");
         }
+        const seenFavKeys3 = /* @__PURE__ */ new Set();
+        favoriteSongs = favoriteSongs.filter((song) => {
+          var _a, _b;
+          const key = `${(song.name || "").trim()}-${(song.singer || ((_b = (_a = song.ar) == null ? void 0 : _a[0]) == null ? void 0 : _b.name) || "").trim()}`;
+          if (seenFavKeys3.has(key))
+            return false;
+          seenFavKeys3.add(key);
+          return true;
+        });
+        console.log("[AIRecommend] 🔄 刷新画像 - 去重后收藏总计:", favoriteSongs.length, "首");
         const totalFavoriteCount = favoriteSongs.length;
         console.log("[AIRecommend] 🔎 开始扫描playRecord存储键...");
         try {
@@ -2015,7 +2093,12 @@ const _sfc_main = {
         } catch (e) {
           console.warn("[AIRecommend] ⚠️ 扫描playRecord失败:", e.message);
         }
-        userData.favoriteSongs = favoriteSongs.slice(0, 500).map((song, index) => {
+        const maxFavSample2 = 500;
+        let sampledFavorites2 = favoriteSongs;
+        if (favoriteSongs.length > maxFavSample2) {
+          sampledFavorites2 = [...favoriteSongs].sort(() => Math.random() - 0.5).slice(0, maxFavSample2);
+        }
+        userData.favoriteSongs = sampledFavorites2.map((song, index) => {
           var _a, _b;
           const songId = String(song.id || "");
           const playRecord = common_vendor.index.getStorageSync(`playRecord_${songId}`);
@@ -2056,7 +2139,14 @@ const _sfc_main = {
             playHistoryArr = rawPlayHistory;
           }
           if (playHistoryArr.length > 0) {
-            userData.playHistory = playHistoryArr.slice(0, 200).map((song) => {
+            const maxHistorySample2 = 200;
+            let sampledHistory2 = playHistoryArr;
+            if (playHistoryArr.length > maxHistorySample2) {
+              const recent20b = playHistoryArr.slice(0, 20);
+              const restShuffled2 = playHistoryArr.slice(20).sort(() => Math.random() - 0.5).slice(0, maxHistorySample2 - 20);
+              sampledHistory2 = [...recent20b, ...restShuffled2];
+            }
+            userData.playHistory = sampledHistory2.map((song) => {
               const songId = String(song.id || "");
               const playRecord = songId ? common_vendor.index.getStorageSync(`playRecord_${songId}`) : null;
               return {
@@ -2085,6 +2175,28 @@ const _sfc_main = {
           console.warn("[AIRecommend] 刷新画像 - 历史播放数据收集失败:", e.message);
           if (!userData.playHistory)
             userData.playHistory = [];
+        }
+        try {
+          const rawDislikeList2 = common_vendor.index.getStorageSync("dislikeList");
+          let dislikeArr2 = [];
+          if (typeof rawDislikeList2 === "string") {
+            try {
+              dislikeArr2 = JSON.parse(rawDislikeList2) || [];
+            } catch (e) {
+              dislikeArr2 = [];
+            }
+          } else if (Array.isArray(rawDislikeList2)) {
+            dislikeArr2 = rawDislikeList2;
+          }
+          userData.dislikeList = dislikeArr2.map((item) => ({
+            name: item.name || "",
+            singer: item.singer || ""
+          })).filter((item) => item.name);
+          console.log("[AIRecommend] 🔄 刷新画像 - 不喜欢歌曲:", userData.dislikeList.length, "首:", userData.dislikeList.map((s) => `${s.name}-${s.singer}`).join("、"));
+        } catch (e) {
+          console.warn("[AIRecommend] 🔄 刷新画像 - 读取不喜欢列表失败:", e.message);
+          if (!userData.dislikeList)
+            userData.dislikeList = [];
         }
         common_vendor.index.removeStorageSync("aiUserProfileData");
         common_vendor.index.removeStorageSync("aiUserProfileCache");
@@ -2459,77 +2571,105 @@ const _sfc_main = {
       }
     };
     const buildUserProfileAnalysisPrompt = (userData) => {
-      var _a, _b, _c, _d;
+      var _a, _b, _c;
+      const allSongs = [...userData.playHistory || [], ...userData.favoriteSongs || []];
+      let chineseCount = 0;
+      const totalCount = allSongs.length;
+      allSongs.forEach((song) => {
+        if (song && /[\u4e00-\u9fa5]/.test(song.name || ""))
+          chineseCount++;
+      });
+      const chineseRatio = totalCount > 0 ? Math.round(chineseCount / totalCount * 100) : 0;
+      let totalPlayCount = 0, totalCompletionRate = 0, songsWithPlayRecord = 0;
+      allSongs.forEach((song) => {
+        if (song == null ? void 0 : song.playRecord) {
+          totalPlayCount += Number(song.playRecord.playCount) || 0;
+          totalCompletionRate += Number(song.playRecord.avgCompletionRate) || 0;
+          songsWithPlayRecord++;
+        }
+      });
+      const avgPlayCount = songsWithPlayRecord > 0 ? (totalPlayCount / songsWithPlayRecord).toFixed(1) : 0;
+      const avgCompletionRate = songsWithPlayRecord > 0 ? Math.round(totalCompletionRate / songsWithPlayRecord) : 0;
+      const timeSlots = { 早晨: 0, 下午: 0, 晚上: 0, 深夜: 0 };
+      (userData.playHistory || []).forEach((song) => {
+        if (song == null ? void 0 : song.playTime) {
+          const hour = new Date(song.playTime).getHours();
+          if (hour >= 5 && hour < 12)
+            timeSlots.早晨++;
+          else if (hour >= 12 && hour < 18)
+            timeSlots.下午++;
+          else if (hour >= 18 && hour < 23)
+            timeSlots.晚上++;
+          else
+            timeSlots.深夜++;
+        }
+      });
+      const totalPlays = (userData.playHistory || []).length;
+      const timeDist = totalPlays > 0 ? Object.entries(timeSlots).map(([k, v]) => `${k}${Math.round(v / totalPlays * 100)}%`).join("、") : "无数据";
+      const isTrueLove = (s) => {
+        if (!(s == null ? void 0 : s.playRecord))
+          return false;
+        const rate = parseFloat(s.playRecord.avgCompletionRate) || 0;
+        const fullPlayCount = s.playRecord.fullPlayCount || 0;
+        const playCount = s.playRecord.playCount || 0;
+        return playCount >= 3 && rate >= 60 || fullPlayCount >= 2 || playCount >= 5;
+      };
+      const trueLoveSet = /* @__PURE__ */ new Set();
+      (userData.favoriteSongs || []).forEach((s) => {
+        if (isTrueLove(s))
+          trueLoveSet.add(`${s.name}-${s.singer}`);
+      });
       let prompt = `请根据以下用户的听歌数据，深入分析用户的基本信息和音乐偏好。
 
-[用户数据概览]
-- 历史播放记录：${((_a = userData.playHistory) == null ? void 0 : _a.length) || 0} 首
-- 收藏歌曲数量：${((_b = userData.favoriteSongs) == null ? void 0 : _b.length) || 0} 首
-- 不喜欢歌手：${((_c = userData.dislikeList) == null ? void 0 : _c.length) || 0} 位
-- 常听歌手：${((_d = userData.topArtists) == null ? void 0 : _d.length) || 0} 位
+[数据摘要]
+- 播放历史: ${((_a = userData.playHistory) == null ? void 0 : _a.length) || 0}首，收藏: ${((_b = userData.favoriteSongs) == null ? void 0 : _b.length) || 0}首(真爱${trueLoveSet.size}首)
+- 平均完播率: ${avgCompletionRate}%，平均播放${avgPlayCount}次/首
+- 语言分布: 中文${chineseRatio}%，其他${100 - chineseRatio}%
+- 播放时段: ${timeDist}
+- 不喜欢歌曲: ${((_c = userData.dislikeList) == null ? void 0 : _c.length) || 0}首
 
 `;
       if (userData.playHistory && userData.playHistory.length > 0) {
-        const highCompletionSongs = userData.playHistory.filter((song) => {
+        const highCompletionPool = userData.playHistory.filter((song) => {
           const rate = song.playRecord ? Number(song.playRecord.avgCompletionRate) || 0 : 0;
-          return rate >= 70;
-        }).slice(0, 10).map((song) => `${song.name}-${song.singer}`);
-        prompt += `[高完播率(>=70%)歌曲 - 用户最爱，共${highCompletionSongs.length}首]
+          const playCount = song.playRecord ? Number(song.playRecord.playCount) || 0 : 0;
+          return rate >= 60 && playCount >= 2;
+        });
+        const highCompletionSongs = [...highCompletionPool].sort(() => Math.random() - 0.5).slice(0, 15).map((song) => `${song.name}-${song.singer}`);
+        prompt += `[高频完播歌曲 - 共${highCompletionPool.length}首，随机展示${highCompletionSongs.length}首]
 `;
         prompt += highCompletionSongs.length > 0 ? highCompletionSongs.join(", ") + "\n" : "（暂无）\n";
-        const recentSongs = userData.playHistory.slice(0, 10).map((song) => `${song.name}-${song.singer}`);
+        const recent5 = userData.playHistory.slice(0, 5).map((song) => `${song.name}-${song.singer}`);
+        const randomPool = userData.playHistory.slice(5);
+        const random10 = [...randomPool].sort(() => Math.random() - 0.5).slice(0, 10).map((song) => `${song.name}-${song.singer}`);
+        const mixedRecent = [...recent5, ...random10];
         prompt += `
-[最近播放 - 共${userData.playHistory.length}首，展示前${recentSongs.length}首]
+[播放历史采样 - 共${userData.playHistory.length}首，展示最近5首+随机10首]
 `;
-        prompt += recentSongs.join(", ") + "\n";
+        prompt += mixedRecent.join(", ") + "\n";
       }
       if (userData.favoriteSongs && userData.favoriteSongs.length > 0) {
         prompt += `
-[收藏歌单 - ${userData.favoriteSongs.length}首（最重要的品味指标，用户主动收藏=真实喜好）]
+[收藏歌单 - ${userData.favoriteSongs.length}首，真爱${trueLoveSet.size}首，普通${userData.favoriteSongs.length - trueLoveSet.size}首]
 `;
-        prompt += `请重点分析：音乐风格、语言偏好、情感类型、歌手偏好
-
-`;
-        const highCompletionFavorites = userData.favoriteSongs.filter((s) => {
-          if (!s.playRecord || !s.playRecord.avgCompletionRate)
-            return false;
-          return parseFloat(s.playRecord.avgCompletionRate) >= 70;
-        });
-        const multiPlayFavorites = userData.favoriteSongs.filter((s) => {
-          if (!s.playRecord)
-            return false;
-          const rate = parseFloat(s.playRecord.avgCompletionRate) || 0;
-          const fullPlayCount = s.playRecord.fullPlayCount || 0;
-          const playCount = s.playRecord.playCount || 0;
-          return rate >= 50 && rate < 70 && (fullPlayCount >= 3 || playCount >= 5);
-        });
-        const trueLoveSet = /* @__PURE__ */ new Set();
-        [...highCompletionFavorites, ...multiPlayFavorites].forEach((song) => {
-          trueLoveSet.add(`${song.name}-${song.singer}`);
-        });
-        console.log(`[AIRecommend] 收藏分类: 真爱${trueLoveSet.size}首(高完播${highCompletionFavorites.length}+多次${multiPlayFavorites.length}) / 普通${userData.favoriteSongs.length - trueLoveSet.size}首`);
         if (trueLoveSet.size > 0) {
-          const trueLoveList = Array.from(trueLoveSet).slice(0, 15);
-          prompt += `[真爱收藏 - ${trueLoveSet.size}首（收藏+经常完播=真正最爱）]
+          const trueLoveArr = Array.from(trueLoveSet);
+          const trueLoveSample = [...trueLoveArr].sort(() => Math.random() - 0.5).slice(0, 15);
+          prompt += `[真爱收藏 - 共${trueLoveSet.size}首，随机展示${trueLoveSample.length}首（多次播放+高完播=真正最爱）]
 `;
-          prompt += trueLoveList.join(", ");
-          if (trueLoveSet.size > 15)
-            prompt += `
-... 等${trueLoveSet.size}首`;
-          prompt += `
-
-`;
+          prompt += trueLoveSample.join(", ") + "\n\n";
         }
-        const normalFavorites = userData.favoriteSongs.filter((s) => !trueLoveSet.has(`${s.name}-${s.singer}`)).slice(0, 30).map((s) => `${s.name}-${s.singer}`);
-        if (normalFavorites.length > 0) {
-          prompt += `[普通收藏 - 展示前${normalFavorites.length}首]
+        const normalFavoritesPool = userData.favoriteSongs.filter((s) => !trueLoveSet.has(`${s.name}-${s.singer}`)).map((s) => `${s.name}-${s.singer}`);
+        const normalSample = [...normalFavoritesPool].sort(() => Math.random() - 0.5).slice(0, 20);
+        if (normalSample.length > 0) {
+          prompt += `[普通收藏 - 共${normalFavoritesPool.length}首，随机展示${normalSample.length}首]
 `;
-          prompt += normalFavorites.join(", ") + "\n\n";
+          prompt += normalSample.join(", ") + "\n\n";
         }
         const favoriteArtists = {};
         userData.favoriteSongs.forEach((song) => {
           if (song.singer) {
-            const weight = song.playRecord && song.playRecord.avgCompletionRate >= 70 ? 3 : 1;
+            const weight = isTrueLove(song) ? 3 : 1;
             favoriteArtists[song.singer] = (favoriteArtists[song.singer] || 0) + weight;
           }
         });
@@ -2544,10 +2684,12 @@ const _sfc_main = {
 `;
       }
       if (userData.dislikeList && userData.dislikeList.length > 0) {
+        const dislikeSongs = userData.dislikeList.map((s) => `${s.name}-${s.singer}`).slice(0, 20);
         prompt += `
-[不喜欢的歌手] ${userData.dislikeList.join(", ")}
+[不喜欢的歌曲 - 共${userData.dislikeList.length}首，展示${dislikeSongs.length}首]
+${dislikeSongs.join(", ")}
 `;
-        prompt += `分析时避免推荐这些歌手的风格
+        prompt += `请分析这些歌曲的共同特征（风格/情绪/节奏），在画像中标注需避免的方向。注意：用户只是不喜欢这些具体歌曲，不代表不喜欢这些歌手的其他作品。
 `;
       }
       if (userData.topArtists && userData.topArtists.length > 0) {
@@ -2584,23 +2726,25 @@ const _sfc_main = {
   "rhythmPreference": "节奏偏好（慢节奏 / 中速律动 / 高能量）",
   "voicePreference": "声音偏好（女声为主 / 男声为主 / 乐队组合 / 男女均衡）",
   "eraPreference": "年代偏好（经典怀旧 / 千禧金曲 / 2010s热单 / 最新潮流）",
-  "profileName": "画像名称（如：治愈系华语流行爱好者，2-8个字）",
-  "profileDesc": "画像描述（一句话概括用户音乐品味特征）",
-  "matchPercent": 匹配度百分比整数(0-99)，基于以下规则计算：数据量充足且画像特征明显时给85-99，有部分数据但特征不够明确时给60-84，数据很少或画像模糊时给30-59
+"profileName": "画像名称（如：治愈系华语流行爱好者，2-8个字）",
+"profileDesc": "画像描述（一句话概括用户音乐品味特征）",
+"avoidDirections": "需避免的风格方向（基于不喜欢的歌曲分析，如：避免过度说唱/避免电子舞曲/避免重金属等）",
+"matchPercent": 匹配度百分比整数(0-99)，基于以下规则计算：数据量充足且画像特征明显时给85-99，有部分数据但特征不够明确时给60-84，数据很少或画像模糊时给30-59
 }
 
 [分析要求]
 1. 基于实际听歌记录和收藏数据分析，不要猜测
-2. 重点参考收藏歌单（用户主动收藏=真实喜好）
-3. 结合历史播放记录看近期兴趣变化
-4. 考虑不喜欢列表避免推荐相关风格
+2. 重点参考真爱收藏（多次播放+高完播=真正最爱）
+3. 结合播放历史采样看近期兴趣变化
+4. 考虑不喜欢列表，分析其共同风格特征并标注需避免的方向
+5. 参考数据摘要中的语言分布和播放时段分布
 5. profileName要简洁有辨识度（情绪+语言+流派组合）
 6. profileDesc要具体有洞察力
 7. matchPercent必须基于实际数据量客观评估，不要随意给高分`;
       return prompt;
     };
     const parseUserProfileResponse = (content) => {
-      var _a, _b, _c, _d, _e, _f, _g, _h;
+      var _a, _b, _c, _d, _e, _f, _g, _h, _i;
       try {
         let profile;
         if (typeof content === "object" && content !== null) {
@@ -2630,8 +2774,9 @@ const _sfc_main = {
           rhythmPreference: profile.rhythmPreference || ((_d = userProfileData.value) == null ? void 0 : _d.rhythmPreference) || "",
           voicePreference: profile.voicePreference || ((_e = userProfileData.value) == null ? void 0 : _e.voicePreference) || "",
           eraPreference: profile.eraPreference || ((_f = userProfileData.value) == null ? void 0 : _f.eraPreference) || "",
-          profileName: profile.profileName || ((_g = userProfileData.value) == null ? void 0 : _g.profileName) || "音乐探索者",
-          profileDesc: profile.profileDesc || ((_h = userProfileData.value) == null ? void 0 : _h.profileDesc) || "",
+          avoidDirections: profile.avoidDirections || ((_g = userProfileData.value) == null ? void 0 : _g.avoidDirections) || "",
+          profileName: profile.profileName || ((_h = userProfileData.value) == null ? void 0 : _h.profileName) || "音乐探索者",
+          profileDesc: profile.profileDesc || ((_i = userProfileData.value) == null ? void 0 : _i.profileDesc) || "",
           matchPercent: profile.matchPercent || null
         };
       } catch (error) {
@@ -2678,7 +2823,54 @@ const _sfc_main = {
         return null;
       }
     };
+    const selectSeedSongs = (userData) => {
+      const seeds = [];
+      const maxSeeds = 8;
+      const favorites = (userData.favoriteSongs || []).filter((s) => s && s.name && s.singer);
+      if (favorites.length > 0) {
+        const shuffledFav = [...favorites].sort(() => Math.random() - 0.5);
+        const favCount = Math.min(Math.ceil(maxSeeds / 2), shuffledFav.length);
+        for (let i = 0; i < favCount; i++) {
+          seeds.push({
+            name: shuffledFav[i].name,
+            singer: shuffledFav[i].singer,
+            album: shuffledFav[i].album || ""
+          });
+        }
+      }
+      const highCompletion = (userData.playHistory || []).filter((s) => {
+        if (!s || !s.name || !s.singer)
+          return false;
+        const rate = s.playRecord ? Number(s.playRecord.avgCompletionRate) || 0 : 0;
+        return rate >= 70;
+      });
+      if (highCompletion.length > 0) {
+        const shuffledHist = [...highCompletion].sort(() => Math.random() - 0.5);
+        const histCount = Math.min(maxSeeds - seeds.length, shuffledHist.length);
+        for (let i = 0; i < histCount; i++) {
+          const exists = seeds.some((s) => s.name === shuffledHist[i].name && s.singer === shuffledHist[i].singer);
+          if (!exists) {
+            seeds.push({
+              name: shuffledHist[i].name,
+              singer: shuffledHist[i].singer,
+              album: shuffledHist[i].album || ""
+            });
+          }
+        }
+      }
+      if (seeds.length < 4) {
+        const otherHistory = (userData.playHistory || []).filter((s) => s && s.name && s.singer && !seeds.some((seed) => seed.name === s.name && seed.singer === s.singer)).sort(() => Math.random() - 0.5);
+        for (const song of otherHistory) {
+          if (seeds.length >= maxSeeds)
+            break;
+          seeds.push({ name: song.name, singer: song.singer, album: song.album || "" });
+        }
+      }
+      console.log(`[AIRecommend] 🌱 选出${seeds.length}首种子歌曲:`, seeds.map((s) => `《${s.name}》- ${s.singer}`).join(", "));
+      return seeds;
+    };
     const callAIAPIForRecommend = async (userData) => {
+      var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
       const config = common_vendor.index.getStorageSync("aiApiConfig") || apiConfig.value;
       if (!config) {
         console.log("[AIRecommend] ⚠️ 未找到AI API配置");
@@ -2686,133 +2878,200 @@ const _sfc_main = {
         throw new Error("未找到AI API配置");
       }
       const isBackendMode = config.provider === "backend";
-      const REQUEST_COUNT = 60;
       const FINAL_COUNT = 50;
-      const MAX_RETRIES = 3;
       console.log("[AIRecommend] 🚀 调用AI API:", {
-        模式: isBackendMode ? "默认后端(60取50，跨轮合并)" : "自定义API",
-        平台: config.provider || "custom",
-        最大重试次数: MAX_RETRIES
+        模式: isBackendMode ? "后端编排(种子→检索→排序)" : "自定义API",
+        平台: config.provider || "custom"
       });
-      if (isBackendMode) {
-        const excludedData = buildLayeredExcludedData(userData);
-        const excludedKeys = buildExcludedSongKeys(userData);
-        const STOP_THRESHOLD = 40;
-        const mergedValidSongs = [];
-        const mergedKeys = /* @__PURE__ */ new Set();
-        let previousDuplicatedSongs = [];
-        let previousViolationSongs = [];
-        for (let round = 0; round < MAX_RETRIES; round++) {
-          const prompt2 = buildAIPromptForAI(userData, {
-            retryRound: round,
-            previousDuplicatedSongs,
-            previousViolationSongs,
-            requestCount: REQUEST_COUNT
-          });
-          console.log(`[AIRecommend] 🚀 第${round + 1}/${MAX_RETRIES}次请求, 提示词长度:`, prompt2.length);
-          if (round === 0) {
-            aiStatusText.value = "正在等待AI接口返回数据...";
-          } else {
-            aiStatusText.value = `检测到重复率过高，正在进行第${round + 1}次获取...`;
-          }
-          let result;
-          try {
-            result = await callBackendAIAPISingle(prompt2, userData, REQUEST_COUNT);
-          } catch (e) {
-            console.warn(`[AIRecommend] ⚠️ 第${round + 1}次请求失败:`, e.message);
-            continue;
-          }
-          aiStatusText.value = `正在分析第${round + 1}次推荐结果...`;
-          const analyzed = analyzeRepeatRate(result, excludedData);
-          console.log(`[AIRecommend] 📊 第${round + 1}轮分析：返回${result.length}首，与严格排除重复${analyzed.duplicatedSongs.length}首，重复率${(analyzed.repeatRate * 100).toFixed(1)}%`);
-          const filteredSongs = parseAndValidateSongs(result, excludedKeys, REQUEST_COUNT, REQUEST_COUNT);
-          if (!filteredSongs || filteredSongs.length === 0) {
-            console.warn(`[AIRecommend] ⚠️ 第${round + 1}轮过滤后无有效歌曲`);
-            previousDuplicatedSongs = analyzed.duplicatedSongs;
-            previousViolationSongs = analyzed.violationSongs;
-            continue;
-          }
-          let addedCount = 0;
-          filteredSongs.forEach((song) => {
-            const key = `${song.name}-${song.singer}`.toLowerCase();
-            if (!mergedKeys.has(key)) {
-              mergedKeys.add(key);
-              mergedValidSongs.push(song);
-              addedCount++;
-            }
-          });
-          console.log(`[AIRecommend] ✅ 第${round + 1}轮合并：新增${addedCount}首，累计有效${mergedValidSongs.length}首`);
-          if (mergedValidSongs.length >= STOP_THRESHOLD) {
-            console.log(`[AIRecommend] ✅ 累计有效歌曲达到${STOP_THRESHOLD}首，停止请求`);
-            break;
-          }
-          previousDuplicatedSongs = analyzed.duplicatedSongs;
-          previousViolationSongs = analyzed.violationSongs;
-          if (round < MAX_RETRIES - 1) {
-            console.log(`[AIRecommend] 🔄 累计有效歌曲不足${STOP_THRESHOLD}首，进入第${round + 2}次请求...`);
-            aiStatusText.value = `已获取${mergedValidSongs.length}首有效歌曲，准备第${round + 2}次获取...`;
-          }
-        }
-        if (mergedValidSongs.length > 0) {
-          const aSongs = mergedValidSongs.filter((s) => s.category === "A");
-          const bSongs = mergedValidSongs.filter((s) => s.category !== "A");
-          const finalSongs = [...aSongs, ...bSongs].slice(0, FINAL_COUNT);
-          console.log(`[AIRecommend] ✅ 最终返回 ${finalSongs.length} 首合并后的歌曲（A类${aSongs.slice(0, FINAL_COUNT).length}首）`);
-          return finalSongs;
-        }
-        throw new Error("AI推荐未能返回有效结果");
+      const seeds = selectSeedSongs(userData);
+      if (seeds.length === 0) {
+        console.log("[AIRecommend] 🆕 新用户探索模式：无种子歌曲，将用热搜+多样化关键词探索");
       }
-      const prompt = buildAIPromptForAI(userData, { requestCount: REQUEST_COUNT });
-      console.log("[AIRecommend] 🚀 自定义API单次请求, 提示词长度:", prompt.length);
-      const customResult = await callCustomAIAPI(prompt, config, userData);
-      return (customResult || []).slice(0, FINAL_COUNT);
-    };
-    const callBackendAIAPISingle = async (prompt, userData, requestCount = 60) => {
-      const apiUrl = utils_config.getApiUrl("/api/ai/chat");
-      const estimatedTokens = Math.min(Math.max(requestCount * 300, 6e3), 2e4);
-      const requestBody = {
-        messages: [
-          { role: "system", content: "你是专业音乐推荐助手。直接输出JSON数组，不要做任何推理分析。严格遵守排除规则，已推荐过的歌曲绝对不能再推荐。" },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.7,
-        // 降低温度提高稳定性，减少AI违反排除规则的概率
-        max_tokens: estimatedTokens
-      };
-      return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-          reject(new Error("请求超时"));
-        }, 3e5);
-        common_vendor.index.request({
-          url: apiUrl,
-          method: "POST",
-          timeout: 3e5,
-          header: { "Content-Type": "application/json" },
-          data: requestBody,
-          success: (res) => {
-            clearTimeout(timer);
-            if (res.statusCode >= 200 && res.statusCode < 300) {
-              try {
-                const result = parseAIResponse(res.data, /* @__PURE__ */ new Set(), requestCount, requestCount);
-                resolve(result || []);
-              } catch (e) {
-                reject(new Error("解析AI响应失败: " + e.message));
-              }
-            } else if (res.statusCode === 404 || res.statusCode === 501) {
-              showGuideToSettingsModal("当前后端暂不支持AI接口，请前往设置页面配置第三方AI服务或稍后再试");
-              reject(new Error("后端AI接口不可用"));
-            } else {
-              reject(new Error(`后端请求失败(${res.statusCode})`));
-            }
-          },
-          fail: (err) => {
-            clearTimeout(timer);
-            reject(new Error(err.errMsg || "网络请求失败"));
+      if (isBackendMode) {
+        const excludedKeys2 = buildExcludedSongKeys(userData);
+        console.log(`[AIRecommend] 🚫 排除列表: ${excludedKeys2.size} 首（仅含实际播放过/收藏过的歌）`);
+        const userProfile2 = userProfileData.value ? {
+          profileName: userProfileData.value.profileName || "",
+          profileDesc: userProfileData.value.profileDesc || "",
+          musicStyles: userProfileData.value.musicStyles || [],
+          languagePreference: userProfileData.value.languagePreference || "",
+          emotionTone: userProfileData.value.emotionTone || "",
+          rhythmPreference: userProfileData.value.rhythmPreference || "",
+          voicePreference: userProfileData.value.voicePreference || "",
+          eraPreference: userProfileData.value.eraPreference || "",
+          avoidDirections: userProfileData.value.avoidDirections || ""
+        } : null;
+        const dislikeArtists2 = (userData.dislikeList || []).map((s) => `${s.name}-${s.singer}`);
+        aiStatusText.value = "正在生成个性化推荐...";
+        console.log("[AIRecommend] 📤 发送编排请求到后端...");
+        const result = await services_api.aiRecommendApi.callBackendAIRecommend({
+          seeds,
+          excludedKeys: Array.from(excludedKeys2),
+          userProfile: userProfile2,
+          dislikeArtists: dislikeArtists2,
+          preferences: {
+            scene: selectedScene.value >= 0 ? (_a = sceneOptions[selectedScene.value]) == null ? void 0 : _a.label : void 0,
+            explore: selectedExplore.value >= 0 ? (_b = exploreOptions[selectedExplore.value]) == null ? void 0 : _b.value : void 0,
+            era: selectedEra.value >= 0 ? (_c = eraOptions[selectedEra.value]) == null ? void 0 : _c.value : void 0,
+            language: selectedLang.value >= 0 ? (_d = langOptions[selectedLang.value]) == null ? void 0 : _d.value : void 0,
+            customPrompt: prefMode.value === "custom" ? ((_e = customPromptText.value) == null ? void 0 : _e.trim()) || void 0 : void 0
           }
         });
-      });
+        if (!result || !result.songs || result.songs.length === 0) {
+          throw new Error("后端编排未返回有效结果");
+        }
+        console.log("[AIRecommend] ✅ 后端编排返回:", result.meta);
+        console.log(`[AIRecommend] ✅ 获得 ${result.songs.length} 首真实歌曲推荐`);
+        return result.songs.slice(0, FINAL_COUNT).map((song, index) => {
+          var _a2;
+          return {
+            ...song,
+            _aiId: `ai_backend_${Date.now()}_${index}`,
+            _originalIndex: index,
+            _isSearched: true,
+            _realId: song.id,
+            _realSource: song.source,
+            // 标准化字段，供 playSongAtIndex 缓存路径直接使用
+            ar: song.ar || [{ name: song.singer }],
+            al: song.al || { name: song.album || "" },
+            album: typeof song.album === "object" ? (_a2 = song.album) == null ? void 0 : _a2.name : song.album || "",
+            picUrl: song.img || song.picUrl || "",
+            img: song.img || song.picUrl || "",
+            duration: song.duration || song.interval || "",
+            songmid: song.songmid || "",
+            hash: song.hash || "",
+            copyrightId: song.copyrightId || ""
+          };
+        });
+      }
+      console.log("[AIRecommend] 🚀 自定义API 4步流程开始");
+      const preferences = {
+        scene: selectedScene.value >= 0 ? (_f = sceneOptions[selectedScene.value]) == null ? void 0 : _f.label : void 0,
+        explore: selectedExplore.value >= 0 ? (_g = exploreOptions[selectedExplore.value]) == null ? void 0 : _g.value : void 0,
+        era: selectedEra.value >= 0 ? (_h = eraOptions[selectedEra.value]) == null ? void 0 : _h.value : void 0,
+        language: selectedLang.value >= 0 ? (_i = langOptions[selectedLang.value]) == null ? void 0 : _i.value : void 0,
+        customPrompt: prefMode.value === "custom" ? ((_j = customPromptText.value) == null ? void 0 : _j.trim()) || void 0 : void 0
+      };
+      const dislikeArtists = (userData.dislikeList || []).map((s) => `${s.name}-${s.singer}`);
+      const userProfile = userProfileData.value ? {
+        profileName: userProfileData.value.profileName || "",
+        profileDesc: userProfileData.value.profileDesc || "",
+        musicStyles: userProfileData.value.musicStyles || [],
+        languagePreference: userProfileData.value.languagePreference || "",
+        emotionTone: userProfileData.value.emotionTone || "",
+        rhythmPreference: userProfileData.value.rhythmPreference || "",
+        voicePreference: userProfileData.value.voicePreference || "",
+        eraPreference: userProfileData.value.eraPreference || "",
+        avoidDirections: userProfileData.value.avoidDirections || ""
+      } : {};
+      const avoidStr = userProfile.avoidDirections ? Array.isArray(userProfile.avoidDirections) ? userProfile.avoidDirections.join("、") : String(userProfile.avoidDirections) : "";
+      aiStatusText.value = "正在生成搜索关键词...";
+      const mode = utils_aiRecommendFilter.detectMode(seeds, preferences);
+      console.log(`[AIRecommend] 📝 Step1: 关键词生成 模式=${mode}`);
+      let hotSearchKeywords = [];
+      if (mode === "D" || mode === "A") {
+        try {
+          hotSearchKeywords = await utils_hotSearchCache.getHotSearchKeywords(services_api.searchApi);
+          console.log(`[AIRecommend] 📡 热搜词: ${hotSearchKeywords.length}个 (客户端直连，12小时缓存)`);
+        } catch (e) {
+          console.warn("[AIRecommend] ⚠️ 热搜获取失败，继续:", e.message);
+        }
+      } else {
+        console.log("[AIRecommend] 📡 非新用户/自定义模式，跳过热搜获取");
+      }
+      const kwPrompt = utils_aiRecommendPrompt.buildKeywordPrompt(seeds, hotSearchKeywords, userProfile, preferences, dislikeArtists, mode);
+      console.log("[AIRecommend] 📝 关键词prompt长度:", kwPrompt.length);
+      let keywords = [];
+      try {
+        const kwResponse = await callCustomAISingleMessage(kwPrompt, config, utils_aiRecommendPrompt.KEYWORD_SYSTEM_MESSAGE, 2048, 0.6);
+        keywords = utils_aiRecommendPrompt.parseKeywords(kwResponse);
+        console.log(`[AIRecommend] ✅ Step1完成: ${keywords.length}组关键词: ${keywords.join(", ")}`);
+      } catch (e) {
+        console.error("[AIRecommend] ❌ 关键词生成失败:", e.message);
+        throw new Error(`关键词生成失败: ${e.message}`);
+      }
+      if (keywords.length === 0) {
+        throw new Error("AI未返回有效关键词");
+      }
+      keywords = utils_aiRecommendFilter.filterKeywords(keywords, preferences, mode, avoidStr);
+      if (keywords.length === 0) {
+        throw new Error("关键词过滤后为空");
+      }
+      const SEARCH_KEYWORD_COUNT = 6;
+      if (keywords.length > SEARCH_KEYWORD_COUNT) {
+        keywords = keywords.sort(() => Math.random() - 0.5).slice(0, SEARCH_KEYWORD_COUNT);
+      }
+      console.log(`[AIRecommend] 🔑 过滤后随机抽取${keywords.length}组关键词: ${keywords.join(", ")}`);
+      aiStatusText.value = `正在搜索${keywords.length}组关键词...`;
+      console.log("[AIRecommend] 🔍 Step2: 多平台搜索");
+      const searchResults = await utils_aiRecommendSearch.batchSearch(keywords, hotSearchKeywords, 20);
+      if (searchResults.length === 0) {
+        throw new Error("搜索无结果，请稍后重试");
+      }
+      aiStatusText.value = "正在筛选候选歌曲...";
+      console.log("[AIRecommend] 🧹 Step3: 过滤+去重");
+      const excludedKeys = buildExcludedSongKeys(userData);
+      const candidates = utils_aiRecommendFilter.filterCandidates(searchResults, preferences, excludedKeys);
+      if (candidates.length === 0) {
+        throw new Error("候选歌曲过滤后为空，请减少排除项或稍后重试");
+      }
+      const shuffled = utils_aiRecommendFilter.shuffleByPlatform(candidates);
+      const MAX_CANDIDATES = 120;
+      const limitedCandidates = shuffled.length > MAX_CANDIDATES ? shuffled.sort(() => Math.random() - 0.5).slice(0, MAX_CANDIDATES) : shuffled;
+      console.log(`[AIRecommend] ✅ Step3完成: ${candidates.length}首候选, 交给AI排序${limitedCandidates.length}首`);
+      aiStatusText.value = "正在生成个性化推荐...";
+      console.log("[AIRecommend] 🎯 Step4: AI排序");
+      const rankPrompt = utils_aiRecommendPrompt.buildRankPrompt(seeds, limitedCandidates, userProfile, preferences, dislikeArtists);
+      console.log("[AIRecommend] 📝 排序prompt长度:", rankPrompt.length);
+      let rankResult = [];
+      try {
+        const targetCount = Math.min(50, limitedCandidates.length);
+        const maxTokens = Math.min(targetCount * 200, 1e4);
+        const rankResponse = await callCustomAISingleMessage(rankPrompt, config, utils_aiRecommendPrompt.RANK_SYSTEM_MESSAGE, maxTokens, 0.6);
+        rankResult = utils_aiRecommendPrompt.parseRankResult(rankResponse);
+        console.log(`[AIRecommend] ✅ Step4完成: AI选出${rankResult.length}首`);
+      } catch (e) {
+        console.error("[AIRecommend] ❌ AI排序失败:", e.message);
+        console.log("[AIRecommend] ⚠️ 降级到直接取前50首");
+        rankResult = limitedCandidates.slice(0, FINAL_COUNT).map((c, i) => ({
+          index: c.index,
+          reason: "基于您的听歌偏好推荐",
+          category: "A"
+        }));
+      }
+      const finalSongs = rankResult.map((r, index) => {
+        const candidate = candidates.find((c) => c.index === r.index);
+        if (!candidate)
+          return null;
+        return {
+          name: candidate.name,
+          singer: candidate.singer,
+          album: candidate.albumName,
+          source: candidate.source,
+          id: candidate.id,
+          songmid: candidate.songmid,
+          hash: candidate.hash,
+          img: candidate.img,
+          interval: candidate.interval,
+          reason: r.reason,
+          category: r.category,
+          // 🔑 关键：标记为已搜索，playSongAtIndex 会直接用真实ID播放，跳过二次搜索
+          _isSearched: true,
+          _realId: candidate.id,
+          _realSource: candidate.source,
+          _aiId: `ai_custom_${Date.now()}_${index}`,
+          _originalIndex: index,
+          // 标准化字段
+          ar: [{ name: candidate.singer }],
+          al: { name: candidate.albumName || "" },
+          picUrl: candidate.img || "",
+          duration: candidate.interval || ""
+        };
+      }).filter((s) => s !== null);
+      console.log(`[AIRecommend] 🎉 自定义API 4步流程完成: ${finalSongs.length}首`);
+      return finalSongs;
     };
-    const callCustomAIAPI = async (prompt, config, userData, requestCount = 60) => {
+    const callCustomAISingleMessage = async (userPrompt, config, systemMessage = "你是音乐推荐助手。只输出JSON，不要解释。", maxTokens = 2048, temperature = 0.6) => {
       if (!config.apiKey) {
         showGuideToSettingsModal("当前选择的AI服务商需要API密钥，请前往设置页面配置");
         throw new Error("未配置API密钥");
@@ -2831,440 +3090,70 @@ const _sfc_main = {
         showGuideToSettingsModal("API地址格式不正确，请检查设置中的API地址是否以 http:// 或 https:// 开头");
         throw new Error("API地址格式不正确");
       }
-      const apiKey = config.apiKey;
-      const modelName = config.model || "gpt-3.5-turbo";
-      const estimatedTokens = Math.min(Math.max(requestCount * 300, 6e3), 2e4);
       const requestBody = {
-        model: modelName,
+        model: config.model || "gpt-3.5-turbo",
         messages: [
-          { role: "system", content: "你是专业音乐推荐助手。直接输出JSON数组，不要做任何推理分析。严格遵守排除规则，已推荐过的歌曲绝对不能再推荐。" },
-          { role: "user", content: prompt }
+          { role: "system", content: systemMessage },
+          { role: "user", content: userPrompt }
         ],
-        temperature: 0.8,
-        max_tokens: estimatedTokens
+        temperature,
+        max_tokens: maxTokens
       };
-      console.log("[AIRecommend] 🔗 调用自定义AI API:", {
-        平台: config.provider || "custom",
-        模型: modelName,
-        完整URL: apiUrl,
-        API密钥: apiKey ? `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}` : "未配置",
-        请求参数: JSON.stringify(requestBody, null, 2).substring(0, 500) + "..."
-      });
-      const requestWithTimeoutAI = (url, options, timeout = 3e5) => {
-        return new Promise((resolve, reject) => {
-          const timer = setTimeout(() => {
-            reject(new Error("请求超时"));
-          }, timeout);
-          common_vendor.index.request({
-            url,
-            method: (options.method || "GET").toUpperCase(),
-            timeout,
-            // ⚠️ 关键：uni.request自身timeout必须与外层setTimeout一致，否则默认60s先触发
-            header: options.headers || {},
-            data: typeof options.body === "string" ? JSON.parse(options.body) : options.body,
-            success: (res) => {
-              clearTimeout(timer);
-              const mockResponse = {
-                ok: res.statusCode >= 200 && res.statusCode < 300,
-                status: res.statusCode,
-                statusCode: res.statusCode,
-                headers: res.header,
-                json: () => Promise.resolve(res.data),
-                text: () => Promise.resolve(typeof res.data === "string" ? res.data : JSON.stringify(res.data))
-              };
-              resolve(mockResponse);
-            },
-            fail: (err) => {
-              clearTimeout(timer);
-              reject(new Error(err.errMsg || "网络请求失败"));
-            }
-          });
-        });
-      };
-      try {
-        const headers = { "Content-Type": "application/json" };
-        if (apiKey) {
-          headers["Authorization"] = `Bearer ${apiKey}`;
-        }
-        const response = await requestWithTimeoutAI(apiUrl, {
+      console.log("[AIRecommend] 🔗 调用自定义AI:", { model: requestBody.model, url: apiUrl, maxTokens });
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("请求超时")), 3e5);
+        common_vendor.index.request({
+          url: apiUrl,
           method: "POST",
-          headers,
-          body: JSON.stringify(requestBody)
-        }, 3e5);
-        if (!response.ok) {
-          let errorMessage2 = `API请求失败: ${response.status}`;
-          if (response.status === 404) {
-            errorMessage2 = `API地址不存在(404)，请检查API地址配置是否正确`;
-          } else if (response.status === 401 || response.status === 403) {
-            errorMessage2 = "API密钥无效或已过期";
-            showGuideToSettingsModal("API密钥无效，请检查设置中的配置");
-          } else if (response.status === 429) {
-            errorMessage2 = "API调用频率超限";
-          } else if (response.status >= 500) {
-            errorMessage2 = `服务器内部错误(${response.status})`;
-          }
-          try {
-            const errorData = await response.json();
-            if (errorData.error && errorData.error.message) {
-              errorMessage2 += `
-详情: ${errorData.error.message}`;
+          timeout: 3e5,
+          header: { "Content-Type": "application/json", "Authorization": `Bearer ${config.apiKey}` },
+          data: requestBody,
+          success: (res) => {
+            clearTimeout(timer);
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+              const data = res.data;
+              let content = null;
+              if (data.choices && data.choices[0] && data.choices[0].message) {
+                content = data.choices[0].message.content || data.choices[0].message.reasoning_content || "";
+              } else if (data.response) {
+                content = data.response;
+              } else if (typeof data === "string") {
+                content = data;
+              }
+              if (!content)
+                return reject(new Error("AI返回内容为空"));
+              resolve(content);
+            } else if (res.statusCode === 401 || res.statusCode === 403) {
+              showGuideToSettingsModal("API密钥无效，请检查设置中的配置");
+              reject(new Error("API密钥无效"));
+            } else {
+              reject(new Error(`API请求失败(${res.statusCode})`));
             }
-          } catch (e) {
+          },
+          fail: (err) => {
+            clearTimeout(timer);
+            reject(new Error(err.errMsg || "网络请求失败"));
           }
-          throw new Error(errorMessage2);
-        }
-        const data = await response.json();
-        console.log("[AIRecommend] AI原始响应:", JSON.stringify(data).substring(0, 200));
-        const excludedKeys = buildExcludedSongKeys(userData);
-        return parseAIResponse(data, excludedKeys, requestCount, 50);
-      } catch (error) {
-        throw error;
-      }
-    };
-    const getUserHistoryLevel = (userData) => {
-      const historyCount = (userData.playHistory || []).length + (userData.favoriteSongs || []).length;
-      if (historyCount < 20)
-        return "new";
-      if (historyCount > 100)
-        return "veteran";
-      return "medium";
+        });
+      });
     };
     const buildLayeredExcludedData = (userData) => {
-      const now = Date.now();
-      const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1e3;
-      const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1e3;
       const strictSet = /* @__PURE__ */ new Set();
-      const moderateSet = /* @__PURE__ */ new Set();
-      const looseSet = /* @__PURE__ */ new Set();
       const allSet = /* @__PURE__ */ new Set();
-      const addKey = (set, song) => {
+      const addKey = (song) => {
         if (song && song.name && song.singer) {
           const key = `${String(song.name).trim()} - ${String(song.singer).trim()}`;
-          set.add(key);
+          strictSet.add(key);
           allSet.add(key);
         }
       };
-      (userData.favoriteSongs || []).forEach((s) => addKey(strictSet, s));
+      (userData.favoriteSongs || []).forEach((s) => addKey(s));
       (userData.playlists || []).forEach((list) => {
-        (list.songs || []).forEach((s) => addKey(strictSet, s));
+        (list.songs || []).forEach((s) => addKey(s));
       });
-      (userData.playHistory || []).forEach((s) => addKey(strictSet, s));
-      (userData.historyRecommendedSongs || []).forEach((s) => {
-        const ts = s.timestamp || s.addedAt || s.recommendTime || s.createTime || 0;
-        if (ts >= sevenDaysAgo || ts === 0) {
-          addKey(strictSet, s);
-        } else if (ts >= thirtyDaysAgo) {
-          addKey(moderateSet, s);
-        } else {
-          addKey(looseSet, s);
-        }
-      });
-      return { strictSet, moderateSet, looseSet, allSet };
-    };
-    const analyzeRepeatRate = (songs, excludedData) => {
-      if (!songs || songs.length === 0) {
-        return { repeatRate: 1, duplicatedSongs: [], violationSongs: [], validSongs: [] };
-      }
-      const duplicatedSongs = [];
-      const violationSongs = [];
-      const validSongs = [];
-      songs.forEach((song) => {
-        const key = song.name && song.singer ? `${String(song.name).trim()} - ${String(song.singer).trim()}` : "";
-        if (key && excludedData.strictSet.has(key)) {
-          duplicatedSongs.push(song);
-          violationSongs.push(song);
-        } else {
-          validSongs.push(song);
-        }
-      });
-      const repeatRate = duplicatedSongs.length / songs.length;
-      return { repeatRate, duplicatedSongs, violationSongs, validSongs };
-    };
-    const buildAIPromptForAI = (userData, options = {}) => {
-      const {
-        retryRound = 0,
-        previousDuplicatedSongs = [],
-        previousViolationSongs = [],
-        requestCount = 60
-      } = options;
-      const A_COUNT = 35;
-      const B_COUNT = requestCount - A_COUNT;
-      const historyLevel = getUserHistoryLevel(userData);
-      const layered = buildLayeredExcludedData(userData);
-      let chineseSongRatio = 0;
-      let totalSongs = 0;
-      if (userData.playHistory) {
-        userData.playHistory.forEach((song) => {
-          totalSongs++;
-          if (/[\u4e00-\u9fa5]/.test(song.name))
-            chineseSongRatio++;
-        });
-      }
-      if (userData.favoriteSongs) {
-        userData.favoriteSongs.forEach((song) => {
-          totalSongs++;
-          if (/[\u4e00-\u9fa5]/.test(song.name))
-            chineseSongRatio++;
-        });
-      }
-      const isChineseUser = totalSongs > 0 && chineseSongRatio / totalSongs >= 0.7;
-      const primaryLanguage = isChineseUser ? "中文" : chineseSongRatio / totalSongs >= 0.5 ? "中英混合" : "英文/外文";
-      const primaryLanguageRatio = totalSongs > 0 ? Math.round(chineseSongRatio / totalSongs * 100) : 50;
-      const artistSongCount = /* @__PURE__ */ new Map();
-      const collectArtist = (songs) => {
-        if (!songs)
-          return;
-        songs.forEach((song) => {
-          if (song && song.singer) {
-            const artist = song.singer.trim();
-            artistSongCount.set(artist, (artistSongCount.get(artist) || 0) + 1);
-          }
-        });
-      };
-      collectArtist(userData.playHistory);
-      collectArtist(userData.favoriteSongs);
-      if (userData.playlists) {
-        userData.playlists.forEach((list) => collectArtist(list.songs));
-      }
-      const sortedArtists = [...artistSongCount.entries()].sort((a, b) => b[1] - a[1]);
-      const frequentArtists = sortedArtists.filter(([_, count]) => count >= 1).map(([artist]) => artist).slice(0, 10);
-      const defaultArtists = [
-        "林俊杰",
-        "陈奕迅",
-        "王力宏",
-        "陶喆",
-        "方大同",
-        "薛之谦",
-        "李荣浩",
-        "毛不易",
-        "华晨宇",
-        "邓紫棋",
-        "五月天",
-        "田馥甄",
-        "萧敬腾",
-        "林宥嘉",
-        "蔡依林",
-        "孙燕姿",
-        "潘玮柏",
-        "周汤豪",
-        "杨宗纬",
-        "戴佩妮",
-        "Adele",
-        "Ed Sheeran",
-        "Taylor Swift",
-        "Bruno Mars",
-        "Coldplay",
-        "Maroon 5",
-        "OneRepublic",
-        "Imagine Dragons",
-        "The Weeknd",
-        "Billie Eilish",
-        "Dua Lipa",
-        "Harry Styles",
-        "Sam Smith",
-        "Lady Gaga",
-        "Rihanna",
-        "Jay-Z",
-        "Katy Perry",
-        "Ariana Grande",
-        "Justin Bieber",
-        "Shawn Mendes"
-      ];
-      const candidateArtists = [.../* @__PURE__ */ new Set([...frequentArtists, ...defaultArtists])].slice(0, 35);
-      const strictList = Array.from(layered.strictSet).slice(0, 80);
-      const moderateList = Array.from(layered.moderateSet).slice(0, 40);
-      const looseList = Array.from(layered.looseSet).slice(0, 20);
-      let prompt = `你是音乐推荐助手。请严格按以下要求为用户推荐${requestCount}首歌曲。
-
-【核心要求 - 违反则任务失败】
-1. 必须返回恰好${requestCount}首歌曲，一首不多一首不少。
-2. 列表内不允许有任何重复歌曲（以"歌名-歌手"组合为唯一标识）。
-3. 歌曲必须分为 A、B 两类：A类${A_COUNT}首，B类${B_COUNT}首；每首歌必须带 category 字段，值为 "A" 或 "B"。
-4. A类要求：严格匹配用户画像，必须避开[严格排除]和[中度排除]中的所有歌曲。
-5. B类要求：同风格探索，必须避开[严格排除]，尽量选择用户没听过的新歌/专辑，可少量参考[中度排除]中的风格但不得直接推荐其中歌曲。
-6. 下列排除列表中的歌曲绝对不允许出现在输出中。
-7. 推荐理由15-30字，说明为什么符合用户偏好。
-8. 如果你不确定某首歌是否在排除列表中，请选择另一首你确定不在列表中的歌曲。
-9. 每首歌必须包含 duration 字段，格式为 "mm:ss"（如 "3:45"），表示歌曲时长，请尽量给出准确时长。
-
-【用户历史数据等级】
-${historyLevel === "new" ? "新用户：可适度推荐热门经典和代表作，优先保证歌曲质量。" : historyLevel === "veteran" ? "老用户：用户已听过大量歌曲，请重点探索同风格但用户未接触过的作品，避免推荐近期热门单曲，优先推荐该歌手的中期专辑曲目或同风格冷门佳作。" : "中度用户：以用户画像匹配为主，允许约30%的歌曲进行同风格探索。"}
-
-【语言偏好】
-用户主要听${primaryLanguage}歌曲（${primaryLanguageRatio}%），请保持类似语言比例。
-`;
-      if (retryRound > 0 && previousDuplicatedSongs.length > 0) {
-        prompt += `
-【上轮问题反馈 - 本次绝对避免】
-这是第${retryRound + 1}次推荐。上轮推荐的歌曲中，以下 ${previousDuplicatedSongs.length} 首与用户历史重复或在排除列表中，本次绝对不能再推荐，并避免推荐这些歌手的近期热门歌曲：
-`;
-        previousDuplicatedSongs.slice(0, 20).forEach((s, i) => {
-          prompt += `${i + 1}. ${s.name} - ${s.singer}
-`;
-        });
-        if (previousDuplicatedSongs.length >= 10) {
-          prompt += `以上问题说明热门歌/近期单曲重复率过高，本次请优先选择冷门专辑曲目、B-sides、同风格非热门歌手。
-`;
-        }
-      }
-      prompt += `
-【严格排除 - 绝对禁止】（已收藏/已听过/最近7天AI推荐/历史喜欢的歌）
-${strictList.length > 0 ? strictList.map((s, i) => `${i + 1}. ${s}`).join("\n") : "（暂无）"}
-
-【中度排除 - A类禁止，B类建议避免】（7-30天AI推荐）
-${moderateList.length > 0 ? moderateList.map((s, i) => `${i + 1}. ${s}`).join("\n") : "（暂无）"}
-
-【宽松排除 - 仅作参考】（30天前AI推荐，尽量不要直接重复）
-${looseList.length > 0 ? looseList.map((s, i) => `${i + 1}. ${s}`).join("\n") : "（暂无）"}
-
-【推荐歌手配额】
-从以下歌手中选择推荐，每位歌手推荐1-3首（不要推荐该歌手已听过的歌曲）：
-${candidateArtists.map((a, i) => `${i + 1}. ${a}`).join("\n")}
-
-【用户偏好】
-`;
-      if (hasActivePreferences.value) {
-        if (prefMode.value === "custom" && customPromptText.value.trim().length > 0) {
-          const userInput = customPromptText.value.trim();
-          prompt += `[自定义推荐需求]
-用户具体需求：${userInput}
-
-`;
-          prompt += `[AI约束]
-1. 以上是用户本次的个性化需求，请**优先满足此需求**
-2. 推荐理由必须明确说明为什么这首歌符合用户的需求"${userInput}"
-3. 排除列表规则仍然有效：已听过的歌绝对不能推荐
-`;
-        } else {
-          if (selectedScene.value >= 0) {
-            const scene = sceneOptions[selectedScene.value];
-            const sceneHints = {
-              "开车提神": "节奏明快(BPM 120+)、有律动感、避免过于舒缓的慢歌、可包含摇滚/电子/流行",
-              "深夜助眠": "极缓节奏(BPM<70)、纯音乐或轻音乐为主、无歌词或极简人声、安静氛围感",
-              "运动健身": "高能量(BPM>130)、律动强、燃向、可包含电子/DJ/摇滚/嘻哈",
-              "工作学习": "不抢注意力、中速或轻柔、无歌词或极简人声、背景音乐风格、Lo-fi/古典/轻爵士",
-              "聚会派对": "DJ舞曲/电子/House、高BPM(120-140)、气氛热烈",
-              "独处放空": "氛围感强、民谣/爵士/独立音乐、中等节奏、情感细腻",
-              "情绪低落": "治愈系、温暖歌词、共情感强、舒缓但不压抑",
-              "兴奋High": "电子/DJ/摇滚/金属、爆发力强、高能量快节奏"
-            };
-            prompt += `[使用场景] ${scene.label}
-[AI约束] ${sceneHints[scene.label] || scene.hint}
-
-`;
-          }
-          if (selectedExplore.value >= 0) {
-            const explore = exploreOptions[selectedExplore.value];
-            const exploreHints = {
-              "strict": "严格匹配用户画像，每首歌必须与画像高度吻合",
-              "moderate": "以画像为基础，允许约20%的歌曲跨出画像边界进行适度探索",
-              "surprise": "画像仅作参考，AI自由发挥，大胆推荐用户可能未接触过的风格"
-            };
-            prompt += `[探索程度] ${explore.label}
-[AI约束] ${exploreHints[explore.value]}
-
-`;
-          }
-          if (selectedEra.value >= 0) {
-            const era = eraOptions[selectedEra.value];
-            const eraHints = {
-              "any": "年代不限",
-              "classic": "优先推荐1990年及以前的经典歌曲",
-              "millennium": "优先推荐2000-2010年间的千禧金曲",
-              "2010s": "优先推荐2010-2020年间的流行热单",
-              "latest": "优先推荐近3年内发布的最新潮流歌曲"
-            };
-            prompt += `[年代侧重] ${era.label}
-[AI约束] ${eraHints[era.value]}
-
-`;
-          }
-          if (selectedLang.value >= 0) {
-            const lang = langOptions[selectedLang.value];
-            const langHints = {
-              "any": "语言不限",
-              "chinese": "华语歌曲占比≥60%",
-              "western": "欧美歌曲占比≥60%",
-              "japanese_korean": "日韩歌曲占比≥40%",
-              "mixed": "多语混合，大致均衡分配"
-            };
-            prompt += `[语言侧重] ${lang.label}
-[AI约束] ${langHints[lang.value]}
-
-`;
-          }
-        }
-      }
-      const tasteParts = [];
-      if (userData.playHistory && userData.playHistory.length > 0) {
-        const highCompletionSongs = userData.playHistory.filter((song) => {
-          const rate = song.playRecord ? Number(song.playRecord.avgCompletionRate) || 0 : 0;
-          return rate >= 70;
-        }).sort((a, b) => {
-          const rateA = a.playRecord ? Number(a.playRecord.avgCompletionRate) || 0 : 0;
-          const rateB = b.playRecord ? Number(b.playRecord.avgCompletionRate) || 0 : 0;
-          return rateB - rateA;
-        }).slice(0, 5).map((song) => `${song.name}-${song.singer}`);
-        if (highCompletionSongs.length > 0) {
-          tasteParts.push(`[高完播率(>=70%)歌曲] ${highCompletionSongs.join(", ")}`);
-        }
-        const recentSongs = userData.playHistory.slice(0, 8).map((song) => `${song.name}-${song.singer}`);
-        if (recentSongs.length > 0) {
-          tasteParts.push(`[最近播放] ${recentSongs.join(", ")}`);
-        }
-        const artistPlayCount = /* @__PURE__ */ new Map();
-        userData.playHistory.forEach((song) => {
-          if (song.singer) {
-            const artist = song.singer.trim();
-            const playCount = song.playRecord ? song.playRecord.playCount : 1;
-            artistPlayCount.set(artist, (artistPlayCount.get(artist) || 0) + playCount);
-          }
-        });
-        const topArtists = [...artistPlayCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([artist]) => artist);
-        if (topArtists.length > 0) {
-          tasteParts.push(`[常听歌手] ${topArtists.join(", ")}`);
-        }
-      }
-      if (userData.favoriteSongs && userData.favoriteSongs.length > 0) {
-        const favoriteArtists = {};
-        userData.favoriteSongs.forEach((song) => {
-          if (song.singer) {
-            favoriteArtists[song.singer] = (favoriteArtists[song.singer] || 0) + 1;
-          }
-        });
-        const topFavoriteArtists = Object.entries(favoriteArtists).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([artist]) => artist);
-        if (topFavoriteArtists.length > 0) {
-          tasteParts.push(`[收藏歌手] ${topFavoriteArtists.join(", ")}`);
-        }
-      }
-      if (userData.dislikeList && userData.dislikeList.length > 0) {
-        tasteParts.push(`[不喜欢歌手] ${userData.dislikeList.join(", ")}`);
-      }
-      if (tasteParts.length > 0) {
-        prompt += `
-【用户品味参考 - 用于推断偏好，不要推荐这里的具体歌曲】
-${tasteParts.join("\n")}
-`;
-      }
-      prompt += `
-【输出前必须自查】
-生成${requestCount}首歌曲后，请按顺序逐首检查：
-1. 是否有"歌名-歌手"完全相同的重复项？如果有，移除重复并补充新歌曲。
-2. 是否有任何一首在[严格排除]或[中度排除]列表中？如果有，移除并补充新歌曲。
-3. 是否有任何一首是你曾经向该用户推荐过的歌曲？如果有，移除并补充新歌曲。
-4. A类是否恰好${A_COUNT}首、B类是否恰好${B_COUNT}首？数量不对则调整。
-5. 总数量是否恰好为${requestCount}首？如果不足，继续补充直到${requestCount}首；如果超过，删除多余项。
-6. 每首歌曲是否都包含 name、singer、album、duration、reason、category 六个字段？
-7. duration 字段必须是歌曲时长，格式为 "mm:ss"（如 "3:45"、"4:20"），请尽量给出准确时长。
-8. 你只能输出 JSON 数组，不要有任何解释、说明或 markdown 代码块。
-
-【输出格式】
-直接输出 JSON 数组（恰好${requestCount}首，无重复，不含排除歌曲）：
-[
-  {"name":"歌名","singer":"歌手","album":"专辑","duration":"3:45","reason":"推荐理由","category":"A"},
-  ...
-]`;
-      return prompt;
+      (userData.playHistory || []).forEach((s) => addKey(s));
+      console.log(`[AIRecommend] 🚫 排除规则：仅排除用户实际播放过/收藏过的歌（AI推荐过但未播放的不排除）`);
+      return { strictSet, moderateSet: /* @__PURE__ */ new Set(), looseSet: /* @__PURE__ */ new Set(), allSet };
     };
     const buildExcludedSongKeys = (userData) => {
       const { allSet } = buildLayeredExcludedData(userData);
@@ -3279,279 +3168,6 @@ ${tasteParts.join("\n")}
       });
       console.log(`[AIRecommend] 🚫 构建排除列表完成，共 ${excludedKeys.size} 首歌曲`);
       return excludedKeys;
-    };
-    const parseAIResponse = (data, excludedSongKeys = /* @__PURE__ */ new Set(), requestCount = 60, finalCount = 50) => {
-      try {
-        console.log("[AIRecommend] 📦 开始解析AI响应...");
-        console.log("[AIRecommend] 📦 原始响应数据类型:", typeof data);
-        console.log("[AIRecommend] 📦 排除列表大小:", excludedSongKeys.size);
-        console.log("[AIRecommend] 📦 响应数据keys:", data ? Object.keys(data).join(",") : "null/undefined");
-        let content = null;
-        if (data.choices && data.choices[0] && data.choices[0].message) {
-          if (data.choices[0].message.content) {
-            content = data.choices[0].message.content;
-            console.log("[AIRecommend] ✅ 检测到OpenAI标准格式 (content)");
-          } else if (data.choices[0].message.reasoning_content) {
-            content = data.choices[0].message.reasoning_content;
-            console.log("[AIRecommend] ⚠️ 使用reasoning_content作为备选");
-          }
-        }
-        if (!content && data.data && data.data.response) {
-          content = data.data.response;
-          console.log("[AIRecommend] ✅ 检测到后端包装格式 (data.response)");
-        }
-        if (!content && data.response) {
-          content = data.response;
-          console.log("[AIRecommend] ✅ 检测到简单包装格式 (response)");
-        }
-        if (!content && typeof data === "string") {
-          content = data;
-          console.log("[AIRecommend] ✅ 检测到字符串格式");
-        }
-        if (!content && Array.isArray(data)) {
-          content = JSON.stringify(data);
-          console.log("[AIRecommend] ✅ 检测到数组格式");
-        }
-        console.log("[AIRecommend] 📦 提取到的content类型:", typeof content);
-        console.log("[AIRecommend] 📦 提取到的content长度:", content ? content.length : "null");
-        if (typeof content !== "string") {
-          console.log("[AIRecommend] 📦 content为非字符串类型，尝试直接使用或序列化");
-          if (Array.isArray(content) && content.length > 0 && content[0].name) {
-            console.log("[AIRecommend] ✅ content已是歌曲数组，直接使用");
-            return parseAndValidateSongs(JSON.stringify(content), excludedSongKeys, requestCount, finalCount);
-          }
-          content = typeof content === "object" ? JSON.stringify(content) : String(content);
-          console.log("[AIRecommend] 📦 序列化后content类型:", typeof content);
-        }
-        if (!content || typeof content === "string" && content.trim().length === 0) {
-          throw new Error("AI返回内容为空");
-        }
-        console.log("[AIRecommend] AI返回的原始内容:", content.substring(0, 200));
-        console.log("[AIRecommend] AI响应总长度:", content.length);
-        let jsonStr = content.trim();
-        if (jsonStr.startsWith("```")) {
-          jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
-        }
-        try {
-          const result = parseAndValidateSongs(jsonStr, excludedSongKeys, requestCount, finalCount);
-          if (result && result.length > 0) {
-            return result;
-          }
-        } catch (parseError) {
-          console.warn("[AIRecommend] ⚠️ 直接解析失败，尝试修复截断的JSON...");
-        }
-        console.log("[AIRecommend] 🔧 尝试修复截断的JSON...");
-        const fixedJson = fixTruncatedJson(jsonStr);
-        if (fixedJson !== jsonStr) {
-          console.log("[AIRecommend] ✅ JSON已修复");
-          try {
-            const result = parseAndValidateSongs(fixedJson, excludedSongKeys, requestCount, finalCount);
-            if (result && result.length > 0) {
-              console.log(`[AIRecommend] ✅ 修复后成功解析 ${result.length} 首歌曲`);
-              return result;
-            }
-          } catch (fixError) {
-            console.warn("[AIRecommend] ⚠️ 修复后仍无法解析，尝试逐条提取...");
-          }
-        }
-        console.log("[AIRecommend] 🔍 逐个提取完整的歌曲对象...");
-        const extractedSongs = extractValidSongObjects(jsonStr);
-        if (extractedSongs.length > 0) {
-          console.log(`[AIRecommend] ✅ 成功提取 ${extractedSongs.length} 首完整歌曲`);
-          return extractedSongs;
-        }
-        throw new Error("无法从AI响应中提取有效的歌曲数据");
-      } catch (error) {
-        console.error("[AIRecommend] ❌ 解析AI响应失败:", error);
-        throw new Error(`解析推荐结果失败: ${error.message}`);
-      }
-    };
-    const parseAndValidateSongs = (input, excludedSongKeys = /* @__PURE__ */ new Set(), requestCount = 60, finalCount = 50) => {
-      const songs = typeof input === "string" ? JSON.parse(input) : input;
-      if (!Array.isArray(songs) || songs.length === 0) {
-        return null;
-      }
-      let validSongs = songs.filter(
-        (song) => song && song.name && typeof song.name === "string" && song.name.trim() && song.singer && typeof song.singer === "string" && song.singer.trim()
-      );
-      console.log(`[AIRecommend] 📊 解析到 ${validSongs.length} 首有效歌曲`);
-      if (validSongs.length !== requestCount) {
-        console.warn(`[AIRecommend] ⚠️ AI返回数量不是${requestCount}首: ${validSongs.length}首，提示词约束可能未完全遵守`);
-      }
-      if (excludedSongKeys.size > 0) {
-        const beforeFilter = validSongs.length;
-        const violationDetails = [];
-        validSongs = validSongs.filter((song) => {
-          const songKey = `${song.name.toLowerCase().trim()}-${song.singer.toLowerCase().trim()}`;
-          const isExcluded = excludedSongKeys.has(songKey);
-          if (isExcluded && violationDetails.length < 5) {
-            violationDetails.push(`${song.name} - ${song.singer}`);
-          }
-          return !isExcluded;
-        });
-        if (validSongs.length < beforeFilter) {
-          console.warn(`[AIRecommend] 🛡️ 安全网过滤掉 ${beforeFilter - validSongs.length} 首违规歌曲，剩余 ${validSongs.length} 首。建议继续优化提示词`);
-          if (violationDetails.length > 0) {
-            console.warn(`[AIRecommend] 🛡️ 违规示例: ${violationDetails.join(" | ")}`);
-          }
-        }
-      }
-      const beforeDedup = validSongs.length;
-      const seen = /* @__PURE__ */ new Set();
-      const duplicates = [];
-      validSongs = validSongs.filter((song) => {
-        const key = `${song.name}-${song.singer}`.toLowerCase();
-        if (seen.has(key)) {
-          duplicates.push(`${song.name} - ${song.singer}`);
-          return false;
-        }
-        seen.add(key);
-        return true;
-      });
-      if (duplicates.length > 0) {
-        console.warn(`[AIRecommend] 🛡️ 安全网去重: ${beforeDedup} → ${validSongs.length} 首，移除 ${duplicates.length} 首。建议继续优化提示词`);
-      }
-      const aSongs = validSongs.filter((song) => String(song.category || "").toUpperCase() === "A");
-      const bSongs = validSongs.filter((song) => String(song.category || "").toUpperCase() !== "A");
-      validSongs = [...aSongs, ...bSongs].slice(0, finalCount);
-      if (validSongs.length < finalCount) {
-        console.warn(`[AIRecommend] ⚠️ 有效歌曲不足${finalCount}首，实际返回 ${validSongs.length} 首`);
-      }
-      if (validSongs.length === 0) {
-        return null;
-      }
-      console.log(`[AIRecommend] ✅ 最终返回 ${validSongs.length} 首合格歌曲（A类${aSongs.slice(0, finalCount).filter((s) => String(s.category || "").toUpperCase() === "A").length}首）`);
-      return validSongs.map((song) => ({
-        name: String(song.name).trim(),
-        singer: String(song.singer).trim(),
-        album: song.album ? String(song.album).trim() : "",
-        duration: song.duration || "",
-        reason: song.reason ? String(song.reason).trim() : "",
-        category: String(song.category || "").toUpperCase()
-      }));
-    };
-    const fixTruncatedJson = (jsonStr) => {
-      let fixed = jsonStr.trim();
-      fixed = fixed.replace(/[^}\]\w\s,"'\-:]$/, "");
-      let openBrackets = { "{": 0, "[": 0 };
-      let inString = false;
-      let stringChar = "";
-      let i = 0;
-      while (i < fixed.length) {
-        const char = fixed[i];
-        if (inString) {
-          if (char === "\\") {
-            i += 2;
-            continue;
-          } else if (char === stringChar) {
-            inString = false;
-          }
-        } else {
-          if (char === '"' || char === "'") {
-            inString = true;
-            stringChar = char;
-          } else if (char === "{") {
-            openBrackets["{"]++;
-          } else if (char === "}") {
-            openBrackets["{"]--;
-          } else if (char === "[") {
-            openBrackets["["]++;
-          } else if (char === "]") {
-            openBrackets["["]--;
-          }
-        }
-        i++;
-      }
-      if (inString) {
-        fixed += stringChar;
-      }
-      while (openBrackets["{"] > openBrackets["["]) {
-        fixed = fixed.replace(/,\s*"[^"]*"\s*:\s*[^}]*$/, "");
-        fixed += "}";
-        openBrackets["{"]--;
-      }
-      while (openBrackets["["] > 0) {
-        fixed = fixed.replace(/,\s*\{[^}]*$/s, "");
-        fixed = fixed.replace(/,\s*[^,\]]*$/s, "");
-        fixed += "]";
-        openBrackets["["]--;
-      }
-      return fixed;
-    };
-    const extractValidSongObjects = (text) => {
-      const songs = [];
-      const standardRegex = /\{\s*"name"\s*:\s*"[^"]+"\s*,\s*"singer"\s*:\s*"[^"]+"(?:\s*,\s*"[^"]+"\s*:\s*"[^"]*")*\s*\}/g;
-      let match;
-      while ((match = standardRegex.exec(text)) !== null) {
-        try {
-          const songObj = JSON.parse(match[0]);
-          if (songObj.name && songObj.singer) {
-            songs.push({
-              name: String(songObj.name).trim(),
-              singer: String(songObj.singer).trim(),
-              album: songObj.album ? String(songObj.album).trim() : "",
-              duration: songObj.duration || "",
-              reason: songObj.reason ? String(songObj.reason).trim() : "",
-              category: songObj.category ? String(songObj.category).toUpperCase() : ""
-            });
-            console.log(`[AIRecommend] 🎵 提取歌曲: ${songObj.name} - ${songObj.singer}`);
-          }
-        } catch (e) {
-          console.warn("[AIRecommend] ⚠️ 提取单首歌曲时解析失败:", match[0].substring(0, 50));
-        }
-      }
-      if (songs.length === 0) {
-        const looseRegex = /\{[^}]*"name"\s*:\s*"([^"]+)"[^}]*"singer"\s*:\s*"([^"]+)"[^}]*\}/g;
-        while ((match = looseRegex.exec(text)) !== null) {
-          try {
-            const startIdx = match.index;
-            let braceCount = 0;
-            let endIdx = startIdx;
-            let inStr = false;
-            for (let i = startIdx; i < text.length; i++) {
-              const char = text[i];
-              if (inStr) {
-                if (char === "\\") {
-                  i++;
-                  continue;
-                }
-                if (char === '"') {
-                  inStr = false;
-                }
-              } else {
-                if (char === '"') {
-                  inStr = true;
-                } else if (char === "{") {
-                  braceCount++;
-                } else if (char === "}") {
-                  braceCount--;
-                  if (braceCount === 0) {
-                    endIdx = i + 1;
-                    break;
-                  }
-                }
-              }
-            }
-            if (endIdx > startIdx) {
-              const jsonStr = text.substring(startIdx, endIdx);
-              const songObj = JSON.parse(jsonStr);
-              if (songObj.name && songObj.singer) {
-                songs.push({
-                  name: String(songObj.name).trim(),
-                  singer: String(songObj.singer).trim(),
-                  album: songObj.album ? String(songObj.album).trim() : "",
-                  duration: songObj.duration || "",
-                  reason: songObj.reason ? String(songObj.reason).trim() : "",
-                  category: songObj.category ? String(songObj.category).toUpperCase() : ""
-                });
-                console.log(`[AIRecommend] 🎵 提取歌曲(宽松): ${songObj.name} - ${songObj.singer}`);
-              }
-            }
-          } catch (e) {
-          }
-        }
-      }
-      return songs;
     };
     const currentSlide = common_vendor.ref(0);
     const tabletRightView = common_vendor.ref(0);
@@ -4494,7 +4110,7 @@ ${tasteParts.join("\n")}
       }, prefMode.value === "fixed" ? {
         aq: common_vendor.f(sceneOptions, (scene, idx, i0) => {
           return {
-            a: "29c32a82-4-" + i0,
+            a: "463f0d2e-4-" + i0,
             b: common_vendor.p({
               type: "fas",
               name: scene.icon,
@@ -4631,7 +4247,7 @@ ${tasteParts.join("\n")}
       }, recommendations.value.length > 0 ? {
         bp: common_vendor.f(recommendations.value, (song, index, i0) => {
           return common_vendor.e({
-            a: "29c32a82-13-" + i0,
+            a: "463f0d2e-13-" + i0,
             b: common_vendor.p({
               type: "fas",
               name: "blur-on",
@@ -4643,7 +4259,7 @@ ${tasteParts.join("\n")}
           }, song.reason ? {
             e: common_vendor.t(song.reason.slice(0, 30))
           } : {}, {
-            f: "29c32a82-14-" + i0,
+            f: "463f0d2e-14-" + i0,
             g: common_vendor.p({
               type: "fas",
               name: "play-circle",
@@ -4690,7 +4306,7 @@ ${tasteParts.join("\n")}
           }, song.reason ? {
             f: common_vendor.t(song.reason)
           } : {}, {
-            g: "29c32a82-15-" + i0,
+            g: "463f0d2e-15-" + i0,
             h: common_vendor.p({
               type: "fas",
               name: "heart",
@@ -4848,7 +4464,7 @@ ${tasteParts.join("\n")}
       }, prefMode.value === "fixed" ? {
         dc: common_vendor.f(sceneOptions, (scene, idx, i0) => {
           return {
-            a: "29c32a82-24-" + i0,
+            a: "463f0d2e-24-" + i0,
             b: common_vendor.p({
               type: "fas",
               name: scene.icon,
@@ -5044,7 +4660,7 @@ ${tasteParts.join("\n")}
       }, prefMode.value === "fixed" ? {
         eP: common_vendor.f(sceneOptions, (scene, idx, i0) => {
           return {
-            a: "29c32a82-36-" + i0,
+            a: "463f0d2e-36-" + i0,
             b: common_vendor.p({
               type: "fas",
               name: scene.icon,
@@ -5123,7 +4739,7 @@ ${tasteParts.join("\n")}
           }, song.reason ? {
             f: common_vendor.t(song.reason)
           } : {}, {
-            g: "29c32a82-38-" + i0,
+            g: "463f0d2e-38-" + i0,
             h: common_vendor.p({
               type: "fas",
               name: "heart",
@@ -5300,9 +4916,9 @@ ${tasteParts.join("\n")}
           color: "#6b7280"
         })
       } : {}, {
-        gD: common_vendor.o(useDefaultBackend, "35")
+        gD: common_vendor.o(useDefaultBackend, "db")
       }) : {}, {
-        gE: common_vendor.o(closeGuideModal, "c2"),
+        gE: common_vendor.o(closeGuideModal, "09"),
         gF: darkMode.value ? 1 : "",
         gG: isTablet.value ? 1 : "",
         gH: common_vendor.o(() => {
@@ -5317,5 +4933,5 @@ ${tasteParts.join("\n")}
     };
   }
 };
-const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-29c32a82"]]);
+const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-463f0d2e"]]);
 exports.MiniProgramPage = MiniProgramPage;

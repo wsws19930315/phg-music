@@ -859,6 +859,16 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
       console.log("[Search] navigateTo - 检测后 isTablet:", isTablet.value, "url:", url);
       common_vendor.index.navigateTo({ url });
     };
+    const goToRecognize = () => {
+      console.log("[Search] goToRecognize 被调用");
+      checkIsTablet();
+      console.log("[Search] goToRecognize - 检测后 isTablet:", isTablet.value);
+      if (isTablet.value) {
+        common_vendor.index.$emit("index-navigate", { url: "/pages/recognize/index" });
+        return;
+      }
+      common_vendor.index.navigateTo({ url: "/pages/recognize/index" });
+    };
     const goToPlaylistDetail = (playlist) => {
       let link = "";
       let playlistId = playlist.id;
@@ -940,14 +950,24 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
           color: "#9ca3af"
         })
       } : {}, {
-        m: searchKeyword.value ? 1 : "",
-        n: searchKeyword.value
-      }, searchKeyword.value ? {
-        o: common_vendor.o(onSearch, "9d")
+        m: !searchKeyword.value
+      }, !searchKeyword.value ? {
+        n: common_vendor.p({
+          type: "fas",
+          name: "microphone",
+          size: "16",
+          color: "#9ca3af"
+        }),
+        o: common_vendor.o(goToRecognize, "66")
       } : {}, {
-        p: common_vendor.s(searchBarStyle.value)
+        p: searchKeyword.value ? 1 : "",
+        q: searchKeyword.value
+      }, searchKeyword.value ? {
+        r: common_vendor.o(onSearch, "59")
+      } : {}, {
+        s: common_vendor.s(searchBarStyle.value)
       }, {
-        q: common_vendor.f(searchTypes, (type, k0, i0) => {
+        t: common_vendor.f(searchTypes, (type, k0, i0) => {
           return {
             a: common_vendor.t(type.label),
             b: type.value,
@@ -956,33 +976,33 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
           };
         })
       }, {
-        r: searchKeyword.value && !hasSearched.value && searchSuggestions.value.length > 0
+        v: searchKeyword.value && !hasSearched.value && searchSuggestions.value.length > 0
       }, searchKeyword.value && !hasSearched.value && searchSuggestions.value.length > 0 ? {
-        s: common_vendor.f(searchSuggestions.value, (suggestion, index, i0) => {
+        w: common_vendor.f(searchSuggestions.value, (suggestion, index, i0) => {
           return {
-            a: "1e4f5a8e-2-" + i0,
+            a: "1e4f5a8e-3-" + i0,
             b: common_vendor.t(suggestion),
             c: index,
             d: common_vendor.o(($event) => searchWithKeyword(suggestion), index)
           };
         }),
-        t: common_vendor.p({
+        x: common_vendor.p({
           type: "fas",
           name: "search",
           size: "16",
           color: "#9ca3af"
         })
       } : {}, {
-        v: !hasSearched.value && !searchKeyword.value && searchHistory.value.length > 0
+        y: !hasSearched.value && !searchKeyword.value && searchHistory.value.length > 0
       }, !hasSearched.value && !searchKeyword.value && searchHistory.value.length > 0 ? {
-        w: common_vendor.p({
+        z: common_vendor.p({
           type: "fas",
           name: "trash",
           size: "14",
           color: "#999999"
         }),
-        x: common_vendor.o(clearHistory, "e3"),
-        y: common_vendor.f(searchHistory.value, (item, index, i0) => {
+        A: common_vendor.o(clearHistory, "04"),
+        B: common_vendor.f(searchHistory.value, (item, index, i0) => {
           return {
             a: common_vendor.t(item.keyword),
             b: common_vendor.o(($event) => removeHistoryById(item.id), item.id),
@@ -991,10 +1011,10 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
           };
         })
       } : {}, {
-        z: !hasSearched.value && !searchKeyword.value
+        C: !hasSearched.value && !searchKeyword.value
       }, !hasSearched.value && !searchKeyword.value ? {
-        A: common_vendor.o(getHotSearches, "fa"),
-        B: common_vendor.f(hotSearches.value, (item, index, i0) => {
+        D: common_vendor.o(getHotSearches, "02"),
+        E: common_vendor.f(hotSearches.value, (item, index, i0) => {
           return common_vendor.e({
             a: common_vendor.t(index + 1),
             b: getRandomRankColor(index),
@@ -1010,27 +1030,27 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
           });
         })
       } : {}, {
-        C: hasSearched.value
+        F: hasSearched.value
       }, hasSearched.value ? common_vendor.e({
-        D: isLoading.value && currentPage.value === 1 && !isRefreshing.value
+        G: isLoading.value && currentPage.value === 1 && !isRefreshing.value
       }, isLoading.value && currentPage.value === 1 && !isRefreshing.value ? {} : {}, {
-        E: searchError.value
+        H: searchError.value
       }, searchError.value ? {
-        F: common_assets._imports_0,
-        G: common_vendor.t(searchError.value),
-        H: common_vendor.o(onSearch, "0d")
+        I: common_assets._imports_0,
+        J: common_vendor.t(searchError.value),
+        K: common_vendor.o(onSearch, "b3")
       } : {}, {
-        I: hasSearched.value && !isLoading.value && isEmpty.value
+        L: hasSearched.value && !isLoading.value && isEmpty.value
       }, hasSearched.value && !isLoading.value && isEmpty.value ? {
-        J: common_vendor.p({
+        M: common_vendor.p({
           type: "fas",
           name: "frown",
           size: "80",
           color: "#9ca3af"
         }),
-        K: common_vendor.t(searchKeyword.value)
+        N: common_vendor.t(searchKeyword.value)
       } : currentType.value === "songs" ? {
-        M: common_vendor.f(searchResult.songs, (song, index, i0) => {
+        P: common_vendor.f(searchResult.songs, (song, index, i0) => {
           return common_vendor.e({
             a: common_vendor.t(song.name),
             b: common_vendor.t(formatArtists(song.artists)),
@@ -1045,19 +1065,19 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
           } : {}, {
             h: common_vendor.t(formatDuration(song.duration)),
             i: common_vendor.o(($event) => showSongOptions(song), song.id),
-            j: "1e4f5a8e-5-" + i0,
+            j: "1e4f5a8e-6-" + i0,
             k: song.id,
             l: common_vendor.o(($event) => playSong(song), song.id)
           });
         }),
-        N: common_vendor.p({
+        Q: common_vendor.p({
           type: "fas",
           name: "ellipsis-v",
           size: "18",
           color: "#999999"
         })
       } : currentType.value === "playlists" ? {
-        P: common_vendor.f(searchResult.playlists, (playlist, k0, i0) => {
+        S: common_vendor.f(searchResult.playlists, (playlist, k0, i0) => {
           return common_vendor.e({
             a: common_vendor.unref(utils_imageProxy.proxyImageUrl)(playlist.coverImgUrl),
             b: common_vendor.o(($event) => handleSearchImageError($event, playlist), playlist.id),
@@ -1067,7 +1087,7 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
           } : {}, {
             e: playlist.playCount
           }, playlist.playCount ? {
-            f: "1e4f5a8e-6-" + i0,
+            f: "1e4f5a8e-7-" + i0,
             g: common_vendor.p({
               name: "play",
               size: "10",
@@ -1077,7 +1097,7 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
           } : {}, {
             i: playlist.trackCount
           }, playlist.trackCount ? {
-            j: "1e4f5a8e-7-" + i0,
+            j: "1e4f5a8e-8-" + i0,
             k: common_vendor.p({
               name: "music",
               size: "10",
@@ -1105,22 +1125,22 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
           });
         })
       } : {}, {
-        L: currentType.value === "songs",
-        O: currentType.value === "playlists",
-        Q: hasMore.value && !isLoading.value && !isEmpty.value
+        O: currentType.value === "songs",
+        R: currentType.value === "playlists",
+        T: hasMore.value && !isLoading.value && !isEmpty.value
       }, hasMore.value && !isLoading.value && !isEmpty.value ? {
-        R: common_vendor.o(loadMore, "77")
+        U: common_vendor.o(loadMore, "09")
       } : isLoading.value && currentPage.value > 1 ? {} : !hasMore.value && !isEmpty.value ? {} : {}, {
-        S: isLoading.value && currentPage.value > 1,
-        T: !hasMore.value && !isEmpty.value
+        V: isLoading.value && currentPage.value > 1,
+        W: !hasMore.value && !isEmpty.value
       }) : {}, {
-        U: common_vendor.s(safeBottomStyle.value),
-        V: common_vendor.o(loadMore, "37"),
-        W: common_vendor.o(onRefresh, "c9"),
-        X: hasSearched.value,
-        Y: isRefreshing.value,
-        Z: darkMode.value ? 1 : "",
-        aa: isTablet.value ? 1 : ""
+        X: common_vendor.s(safeBottomStyle.value),
+        Y: common_vendor.o(loadMore, "ec"),
+        Z: common_vendor.o(onRefresh, "14"),
+        aa: hasSearched.value,
+        ab: isRefreshing.value,
+        ac: darkMode.value ? 1 : "",
+        ad: isTablet.value ? 1 : ""
       });
     };
   }

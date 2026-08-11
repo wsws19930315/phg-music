@@ -455,6 +455,7 @@ const playerStore = {
     state.isLoading = showLoading;
     state.error = null;
     state.playing = false;
+    state.currentSongUrlLoaded = false;
   },
   /**
    * 🔑 关键功能：同步AI推荐歌曲信息到临时列表
@@ -470,10 +471,6 @@ const playerStore = {
       const state2 = this.state;
       console.log("[updateSongInTempList] 🔄 更新临时列表中的歌曲ID...");
       console.log("[updateSongInTempList]", oldId, "→", newId, "[", newSource, "]");
-      if (state2.playerListId !== store_modules_list.LIST_IDS.TEMP) {
-        console.log("[updateSongInTempList] ℹ️ 当前不是临时列表，跳过");
-        return;
-      }
       const tempList = store_modules_list.listStore.state.lists[store_modules_list.LIST_IDS.TEMP];
       if (!tempList || !tempList.list) {
         console.log("[updateSongInTempList] ⚠️ 临时列表不存在");
@@ -771,15 +768,19 @@ const playerStore = {
         state.isLoading = false;
         state.isGettingUrl = false;
       } else {
-        const isAiTempId = String(song.id || "").startsWith("ai_recommend_");
+        const isAiTempId = String(song.id || "").startsWith("ai_recommend_") || String(song.id || "").startsWith("ai_");
+        const hasRealSource = song.source && song.source !== "ai_pending" && song.source !== "ai";
+        const needsSearch = isAiTempId && !hasRealSource;
         console.log("[playSong] 🔍 检查是否需要搜索:", {
           name: song.name,
           id: song.id,
           source: song.source,
-          isAiTempId
+          isAiTempId,
+          hasRealSource,
+          needsSearch
         });
-        if (isAiTempId) {
-          console.log("[playSong] 🎵 检测到AI临时ID，开始搜索真实音源...");
+        if (needsSearch) {
+          console.log("[playSong] 🎵 检测到AI临时ID且无真实音源，开始搜索...");
           state.isLoading = true;
           this.setStatusText(`🔍 正在搜索：${song.name} - ${song.singer}`);
           try {
@@ -969,7 +970,10 @@ const playerStore = {
         const cacheSource = ((_x = (_w = result.fallback) == null ? void 0 : _w.matchedSong) == null ? void 0 : _x.source) || song.source;
         await utils_musicUrlCache.setCachedMusicUrl(cacheSongId, actualQuality, result.url, cacheSource);
         if (song._isAiSong && song._isSearched) {
-          this.syncAiSongInfoToTempList(song, cacheSongId, cacheSource);
+          const oldAiId = song._aiId || song._originalId || null;
+          if (oldAiId && oldAiId !== cacheSongId) {
+            this.updateSongInTempList(oldAiId, cacheSongId, cacheSource);
+          }
         }
         if (this.isUnsupportedAudioFormat(result.url)) {
           const formatMatch = result.url.match(/\.(\w+)(?:\?|$)/);
@@ -1446,7 +1450,9 @@ const playerStore = {
       picUrl: song.picUrl || "",
       songmid: song.songmid || "",
       hash: song.hash || "",
-      copyrightId: song.copyrightId || ""
+      copyrightId: song.copyrightId || "",
+      playTime: Date.now()
+      // 🔑 修复：记录播放时间戳，用于AI画像时段分析
     };
     const existsIndex = state.playHistory.findIndex((item) => item.id === song.id);
     if (existsIndex !== -1) {

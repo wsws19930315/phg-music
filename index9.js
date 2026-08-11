@@ -973,13 +973,15 @@ const _sfc_main = {
             playlistPlayCount.value = "";
             const processedSongs = aiPlaylistData.songs.map((song, index) => ({
               ...song,
-              id: song._aiId || `ai_song_${Date.now()}_${index}`,
+              id: song.id || song._aiId || `ai_song_${Date.now()}_${index}`,
+              songmid: song.songmid || "",
+              hash: song.hash || "",
               singer: song.singer,
               ar: song.ar || (song.singer ? [{ name: song.singer }] : []),
               al: song.al || { name: song.album || "" },
               album: song.album || { name: song.album || "" },
-              source: "ai_pending",
-              // 标记待搜索
+              source: song.source || "ai_pending",
+              // 有真实source就不标记为pending
               _isAiSong: true,
               // 标记是AI歌曲
               _aiIndex: index
@@ -1315,7 +1317,7 @@ const _sfc_main = {
       } : {}, {
         S: songs.value.length > 0
       }, songs.value.length > 0 ? {
-        T: common_vendor.sr(virtualListRef, "cab5a59c-8", {
+        T: common_vendor.sr(virtualListRef, "2e15d5a2-8", {
           "k": "virtualListRef"
         }),
         U: common_vendor.o(onScrollHandler, "1f"),
@@ -1356,5 +1358,5 @@ const _sfc_main = {
     };
   }
 };
-const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-cab5a59c"]]);
+const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-2e15d5a2"]]);
 exports.MiniProgramPage = MiniProgramPage;

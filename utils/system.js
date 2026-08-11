@@ -105,8 +105,10 @@ const getDeviceInfo = () => {
     // 安全区域
     isIOS: systemInfo.platform === "ios",
     // 是否 iOS 设备
-    isAndroid: systemInfo.platform === "android"
+    isAndroid: systemInfo.platform === "android",
     // 是否 Android 设备
+    isHarmony: systemInfo.platform === "harmony"
+    // 是否 鸿蒙设备
   };
 };
 const getAppVersion = () => {

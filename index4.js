@@ -6,14 +6,10 @@ const utils_config = require("./utils/config.js");
 require("./store/modules/list.js");
 require("./store/modules/player.js");
 const utils_mesh_meshApi = require("./utils/mesh/meshApi.js");
-if (!Array) {
-  const _easycom_roc_icon_plus2 = common_vendor.resolveComponent("roc-icon-plus");
-  _easycom_roc_icon_plus2();
-}
-const _easycom_roc_icon_plus = () => "./uni_modules/roc-icon-plus/components/roc-icon-plus/roc-icon-plus.js";
 if (!Math) {
-  _easycom_roc_icon_plus();
+  RocIconPlus();
 }
+const RocIconPlus = () => "./uni_modules/roc-icon-plus/components/roc-icon-plus/roc-icon-plus.js";
 const _sfc_main = {
   __name: "index",
   emits: ["close"],
@@ -642,18 +638,18 @@ const _sfc_main = {
       }, meshMode.value ? {} : {}) : {
         o: common_vendor.f(sources.value, (source, index, i0) => {
           return common_vendor.e({
-            a: "6e1ab562-3-" + i0,
+            a: "f67036ac-3-" + i0,
             b: common_vendor.t(source.name),
             c: common_vendor.t(source.version),
             d: source.isCircuitBroken
           }, source.isCircuitBroken ? {} : {}, {
-            e: "6e1ab562-4-" + i0,
+            e: "f67036ac-4-" + i0,
             f: common_vendor.t(source.developer || "未知"),
-            g: "6e1ab562-5-" + i0,
+            g: "f67036ac-5-" + i0,
             h: common_vendor.t(source.createdAt || source.updateDate),
             i: source.description
           }, source.description ? {
-            j: "6e1ab562-6-" + i0,
+            j: "f67036ac-6-" + i0,
             k: common_vendor.p({
               type: "fas",
               name: "comment-alt",
@@ -662,7 +658,7 @@ const _sfc_main = {
             }),
             l: common_vendor.t(source.description)
           } : {}, meshMode.value !== "free" ? {
-            m: "6e1ab562-7-" + i0,
+            m: "f67036ac-7-" + i0,
             n: common_vendor.p({
               type: "fas",
               name: "chart-line",
@@ -671,7 +667,7 @@ const _sfc_main = {
             }),
             o: common_vendor.t((source.successRate * 100).toFixed(2))
           } : {}, meshMode.value !== "free" ? {
-            p: "6e1ab562-8-" + i0,
+            p: "f67036ac-8-" + i0,
             q: common_vendor.p({
               type: "fas",
               name: "exchange-alt",
@@ -685,7 +681,7 @@ const _sfc_main = {
           }, source.isCircuitBroken ? {} : {}, {
             v: source.selected
           }, source.selected ? {
-            w: "6e1ab562-9-" + i0,
+            w: "f67036ac-9-" + i0,
             x: common_vendor.p({
               type: "fas",
               name: "check-circle",
@@ -746,7 +742,7 @@ const _sfc_main = {
       } : {
         B: common_vendor.f(activities.value, (activity, index, i0) => {
           return {
-            a: "6e1ab562-13-" + i0,
+            a: "f67036ac-13-" + i0,
             b: common_vendor.p({
               type: "fas",
               name: getActivityIcon(activity.type),
@@ -827,5 +823,5 @@ const _sfc_main = {
     };
   }
 };
-const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-6e1ab562"]]);
+const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-f67036ac"]]);
 exports.MiniProgramPage = MiniProgramPage;

@@ -189,4 +189,31 @@
 .dark-mode .divider {
   background-color: #2d3748;
 }
+	/* 小程序环境全局 @font-face 声明 —— FontAwesome 6.5.1 */
+	/* 解决 @font-face 在组件 scoped 样式中无法全局生效的问题 */
+@font-face {
+		font-family: 'Font Awesome 6 Free';
+		font-style: normal;
+		font-weight: 900;
+		font-display: block;
+		src: url('https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/webfonts/fa-solid-900.woff2') format('woff2'),
+			url('https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/webfonts/fa-solid-900.ttf') format('truetype');
+}
+@font-face {
+		font-family: 'Font Awesome 6 Free';
+		font-style: normal;
+		font-weight: 400;
+		font-display: block;
+		src: url('https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/webfonts/fa-regular-400.woff2') format('woff2'),
+			url('https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/webfonts/fa-regular-400.ttf') format('truetype');
+}
+@font-face {
+		font-family: 'Font Awesome 6 Brands';
+		font-style: normal;
+		font-weight: 400;
+		font-display: block;
+		src: url('https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/webfonts/fa-brands-400.woff2') format('woff2'),
+			url('https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/webfonts/fa-brands-400.ttf') format('truetype');
+}
+
 page{--status-bar-height:25px;--top-window-height:0px;--window-top:0px;--window-bottom:0px;--window-left:0px;--window-right:0px;--window-magin:0px}[data-c-h="true"]{display: none !important;}

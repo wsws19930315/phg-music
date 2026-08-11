@@ -179,7 +179,7 @@ async function getNodeList(forceRefresh = false) {
     try {
       const cached = common_vendor.index.getStorageSync(NODES_CACHE_KEY);
       if (cached && Array.isArray(cached) && cached.length > 0) {
-        console.log(`[MeshConfig] 🧪 测试模式: 返回 ${cached.length} 个测试节点（含模拟异常节点）`);
+        console.warn(`[MeshConfig] ⚠️ 测试模式已开启！返回 ${cached.length} 个测试节点（含模拟异常节点）。请前往设置 > 公共服务器 > 清除测试节点以恢复正常使用`);
         return mergeWithUsage(cached);
       }
     } catch (e) {

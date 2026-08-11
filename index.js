@@ -15,14 +15,10 @@ const utils_imageProxy = require("./utils/imageProxy.js");
 const utils_playSong = require("./utils/playSong.js");
 const composables_usePageLifecycle = require("./composables/usePageLifecycle.js");
 const composables_useBottomHeight = require("./composables/useBottomHeight.js");
-if (!Array) {
-  const _easycom_roc_icon_plus2 = common_vendor.resolveComponent("roc-icon-plus");
-  _easycom_roc_icon_plus2();
-}
-const _easycom_roc_icon_plus = () => "./uni_modules/roc-icon-plus/components/roc-icon-plus/roc-icon-plus.js";
 if (!Math) {
-  _easycom_roc_icon_plus();
+  RocIconPlus();
 }
+const RocIconPlus = () => "./uni_modules/roc-icon-plus/components/roc-icon-plus/roc-icon-plus.js";
 const DOUBLE_CLICK_DELAY = 300;
 const STATUS_BAR_DOUBLE_CLICK_DELAY = 300;
 const _sfc_main = {
@@ -1092,6 +1088,15 @@ const _sfc_main = {
         common_vendor.index.$emit("main-switch-tab", { index: 1 });
       }, 100);
     };
+    const goToRecognize = () => {
+      console.log("[Index] goToRecognize 被调用");
+      checkIsTablet();
+      if (isTablet.value) {
+        common_vendor.index.$emit("index-navigate", { url: "/pages/recognize/index" });
+        return;
+      }
+      common_vendor.index.navigateTo({ url: "/pages/recognize/index" });
+    };
     const goToSearchWithArtist = (artistName) => {
       common_vendor.index.setStorageSync("searchKeywordFromIndex", artistName);
       setTimeout(() => {
@@ -1545,6 +1550,7 @@ const _sfc_main = {
       navigateTo,
       goToPlaylistDetail,
       goToSearch,
+      goToRecognize,
       goToSearchWithArtist,
       goToHotSongs,
       goToDailyRecommend,
@@ -1591,40 +1597,47 @@ const _sfc_main = {
           size: "16",
           color: "#9ca3af"
         }),
-        g: common_vendor.o(goToSearch, "47"),
-        h: common_vendor.s(searchBarStyle.value),
-        i: banners.value.length > 0
+        g: common_vendor.p({
+          type: "fas",
+          name: "microphone",
+          size: "16",
+          color: "#9ca3af"
+        }),
+        h: common_vendor.o(goToRecognize, "d3"),
+        i: common_vendor.o(goToSearch, "2f"),
+        j: common_vendor.s(searchBarStyle.value),
+        k: banners.value.length > 0
       }, banners.value.length > 0 ? {
-        j: common_vendor.f(banners.value, (banner, index, i0) => {
+        l: common_vendor.f(banners.value, (banner, index, i0) => {
           return {
             a: banner.imageUrl,
             b: common_vendor.o(($event) => handleBannerImageError($event, banner), banner.targetId || index),
             c: common_vendor.t(banner.typeTitle),
             d: common_vendor.t(banner.subtitle || "精选音乐，为你推荐"),
-            e: "31670c42-2-" + i0,
+            e: "31670c42-3-" + i0,
             f: common_vendor.o(($event) => playBanner(banner), banner.targetId || index),
-            g: "31670c42-3-" + i0,
+            g: "31670c42-4-" + i0,
             h: common_vendor.o(($event) => collectBanner(banner), banner.targetId || index),
             i: banner.targetId || index,
             j: common_vendor.o(($event) => handleBannerClick(banner), banner.targetId || index),
             k: index === currentBannerIndex.value ? 1 : ""
           };
         }),
-        k: common_vendor.p({
+        m: common_vendor.p({
           name: "play",
           size: "18",
           color: "#ffffff"
         }),
-        l: common_vendor.p({
+        n: common_vendor.p({
           name: "heart",
           size: "18",
           color: "#ffffff"
         }),
-        m: bannerAutoplay.value,
-        n: banners.value.length > 1,
-        o: currentBannerIndex.value,
-        p: common_vendor.o(onBannerChange, "d4"),
-        q: common_vendor.f(banners.value, (item, index, i0) => {
+        o: bannerAutoplay.value,
+        p: banners.value.length > 1,
+        q: currentBannerIndex.value,
+        r: common_vendor.o(onBannerChange, "50"),
+        s: common_vendor.f(banners.value, (item, index, i0) => {
           return {
             a: item.targetId || index,
             b: common_vendor.n({
@@ -1633,67 +1646,67 @@ const _sfc_main = {
           };
         })
       } : {}, {
-        r: common_vendor.p({
+        t: common_vendor.p({
           name: "robot",
           size: "22",
           color: "#ffffff"
         }),
-        s: common_vendor.o(handleAIRecommend, "2d"),
-        t: common_vendor.p({
+        v: common_vendor.o(handleAIRecommend, "92"),
+        w: common_vendor.p({
           name: "heart",
           size: "22",
           color: "#ffffff"
         }),
-        v: common_vendor.o(goToDailyRecommend, "a6"),
-        w: common_vendor.p({
+        x: common_vendor.o(goToDailyRecommend, "e1"),
+        y: common_vendor.p({
           name: "ranking-star",
           size: "22",
           color: "#ffffff"
         }),
-        x: common_vendor.o(($event) => navigateTo("/pages/rank/index"), "de"),
-        y: common_vendor.p({
+        z: common_vendor.o(($event) => navigateTo("/pages/rank/index"), "cb"),
+        A: common_vendor.p({
           name: "fire",
           size: "20",
           color: "#ffffff"
         }),
-        z: common_vendor.o(goToHotSongs, "c7"),
-        A: common_vendor.p({
+        B: common_vendor.o(goToHotSongs, "1f"),
+        C: common_vendor.p({
           name: "list",
           size: "20",
           color: "#ffffff"
         }),
-        B: common_vendor.o(($event) => navigateTo("/pages/songlist-list/index"), "4e"),
-        C: isTablet.value ? 1 : "",
-        D: common_vendor.p({
+        D: common_vendor.o(($event) => navigateTo("/pages/songlist-list/index"), "61"),
+        E: isTablet.value ? 1 : "",
+        F: common_vendor.p({
           name: "chevron-right",
           size: "12",
           color: "#999999"
         }),
-        E: common_vendor.o(($event) => navigateTo("/pages/songlist-list/index"), "74"),
-        F: common_vendor.f(recommendPlaylists.value, (playlist, index, i0) => {
+        G: common_vendor.o(($event) => navigateTo("/pages/songlist-list/index"), "6c"),
+        H: common_vendor.f(recommendPlaylists.value, (playlist, index, i0) => {
           return {
             a: playlist.coverImgUrl,
             b: common_vendor.o(($event) => handlePlaylistImageError($event, playlist), playlist.id),
-            c: "31670c42-10-" + i0,
+            c: "31670c42-11-" + i0,
             d: common_vendor.t(playlist.name),
             e: playlist.id,
             f: common_vendor.o(($event) => goToPlaylistDetail(playlist), playlist.id)
           };
         }),
-        G: common_vendor.p({
+        I: common_vendor.p({
           name: "play",
           size: "12",
           color: "#ffffff"
         }),
-        H: playlistScrollLeft.value,
-        I: common_vendor.o(onPlaylistScroll, "6d"),
-        J: common_vendor.p({
+        J: playlistScrollLeft.value,
+        K: common_vendor.o(onPlaylistScroll, "27"),
+        L: common_vendor.p({
           name: "chevron-right",
           size: "12",
           color: "#999999"
         }),
-        K: common_vendor.o(goToNewSongRank, "80"),
-        L: common_vendor.f(newSongs.value, (song, index, i0) => {
+        M: common_vendor.o(goToNewSongRank, "e0"),
+        N: common_vendor.f(newSongs.value, (song, index, i0) => {
           return {
             a: song.img,
             b: common_vendor.t(song.name),
@@ -1703,7 +1716,7 @@ const _sfc_main = {
             f: common_vendor.o(($event) => playNewSong(song, index), song.id)
           };
         }),
-        M: common_vendor.f(topArtists.value, (artist, index, i0) => {
+        O: common_vendor.f(topArtists.value, (artist, index, i0) => {
           return {
             a: artist.picUrl,
             b: common_vendor.t(artist.name),
@@ -1711,14 +1724,14 @@ const _sfc_main = {
             d: common_vendor.o(($event) => goToSearchWithArtist(artist.name), artist.id)
           };
         }),
-        N: artistScrollLeft.value,
-        O: common_vendor.o(onArtistScroll, "a2"),
-        P: common_vendor.s(safeBottomStyle.value),
-        Q: common_vendor.s(scrollViewStyle.value),
-        R: isRefreshing.value,
-        S: common_vendor.o(onRefresh, "d6"),
-        T: isDarkMode.value ? 1 : "",
-        U: isTablet.value ? 1 : ""
+        P: artistScrollLeft.value,
+        Q: common_vendor.o(onArtistScroll, "44"),
+        R: common_vendor.s(safeBottomStyle.value),
+        S: common_vendor.s(scrollViewStyle.value),
+        T: isRefreshing.value,
+        U: common_vendor.o(onRefresh, "f4"),
+        V: isDarkMode.value ? 1 : "",
+        W: isTablet.value ? 1 : ""
       });
     };
   }

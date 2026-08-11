@@ -1,8 +1,9 @@
 "use strict";
+const common_vendor = require("../common/vendor.js");
 const utils_index = require("../utils/index.js");
 const utils_http = require("../utils/http.js");
 const utils_crypto_index = require("../utils/crypto/index.js");
-require("../common/vendor.js");
+const utils_config = require("../utils/config.js");
 const { formatFileSize, formatTime } = utils_index.format;
 const formatSingerName = (singerList) => {
   return singerList ? singerList.map((s) => s.name).join("、") : "";
@@ -1108,4 +1109,57 @@ const searchApi = {
     });
   }
 };
+const aiRecommendApi = {
+  // 获取后端汇总热搜数据
+  getBackendHotSearch() {
+    return new Promise((resolve, reject) => {
+      common_vendor.index.request({
+        url: utils_config.getApiUrl("/api/hot-search"),
+        method: "GET",
+        timeout: 15e3,
+        success: (res) => {
+          var _a;
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(((_a = res.data) == null ? void 0 : _a.data) || res.data || null);
+          } else {
+            reject(new Error(`获取热搜失败(${res.statusCode})`));
+          }
+        },
+        fail: (err) => reject(new Error(err.errMsg || "网络请求失败"))
+      });
+    });
+  },
+  // 调用后端AI推荐编排接口
+  callBackendAIRecommend(data) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error("请求超时"));
+      }, 12e4);
+      common_vendor.index.request({
+        url: utils_config.getApiUrl("/api/ai/recommend"),
+        method: "POST",
+        timeout: 12e4,
+        header: { "Content-Type": "application/json" },
+        data,
+        success: (res) => {
+          var _a, _b, _c;
+          clearTimeout(timer);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(((_a = res.data) == null ? void 0 : _a.data) || res.data || null);
+          } else if (res.statusCode === 404 || res.statusCode === 501) {
+            reject(new Error("后端AI推荐接口不可用"));
+          } else {
+            const backendMsg = ((_b = res.data) == null ? void 0 : _b.msg) || ((_c = res.data) == null ? void 0 : _c.message) || "";
+            reject(new Error(backendMsg || `后端请求失败(${res.statusCode})`));
+          }
+        },
+        fail: (err) => {
+          clearTimeout(timer);
+          reject(new Error(err.errMsg || "网络请求失败"));
+        }
+      });
+    });
+  }
+};
+exports.aiRecommendApi = aiRecommendApi;
 exports.searchApi = searchApi;

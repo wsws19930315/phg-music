@@ -76,10 +76,46 @@
 .discover-container.dark-mode .app-title {
   color: #f0f0f0;
 }
-.index-search-box {
+.index-search-row {
   display: flex;
   align-items: center;
   width: 100%;
+  gap: 10px;
+}
+.recognize-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00d7cd 0%, #00afff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 175, 255, 0.3);
+}
+
+/* 搜索框内的听歌识曲按钮 */
+.recognize-btn-inline {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right: -8px;
+  /* 靠近右边 */
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.recognize-btn-inline:active {
+  transform: scale(0.9);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+.index-search-box {
+  display: flex;
+  align-items: center;
+  flex: 1;
   height: 40px;
   padding: 0 16px;
   background-color: #f2f2f2;

@@ -4,15 +4,11 @@ const utils_system = require("./utils/system.js");
 const utils_format = require("./utils/format.js");
 const utils_api_tags = require("./utils/api/tags.js");
 const utils_imageProxy = require("./utils/imageProxy.js");
-if (!Array) {
-  const _easycom_roc_icon_plus2 = common_vendor.resolveComponent("roc-icon-plus");
-  _easycom_roc_icon_plus2();
-}
-const _easycom_roc_icon_plus = () => "./uni_modules/roc-icon-plus/components/roc-icon-plus/roc-icon-plus.js";
 if (!Math) {
-  (_easycom_roc_icon_plus + MiniPlayer)();
+  (RocIconPlus + MiniPlayer)();
 }
 const MiniPlayer = () => "./components/player/MiniPlayer.js";
+const RocIconPlus = () => "./uni_modules/roc-icon-plus/components/roc-icon-plus/roc-icon-plus.js";
 const STORAGE_KEY_SOURCE = "songlist_last_source";
 const STORAGE_KEY_TAG = "songlist_last_tag";
 const STORAGE_KEY_SORT = "songlist_last_sort";
@@ -800,7 +796,7 @@ const _sfc_main = {
             b: common_vendor.o(($event) => handleSonglistImageError($event, item), item.id + index),
             c: item.play_count
           }, item.play_count ? {
-            d: "a531cdfa-2-" + i0,
+            d: "c27403af-2-" + i0,
             e: common_vendor.p({
               name: "play",
               size: "10",
@@ -810,7 +806,7 @@ const _sfc_main = {
           } : {}, {
             g: item.total
           }, item.total ? {
-            h: "a531cdfa-3-" + i0,
+            h: "c27403af-3-" + i0,
             i: common_vendor.p({
               name: "music",
               size: "10",
@@ -887,5 +883,5 @@ const _sfc_main = {
     };
   }
 };
-const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-a531cdfa"]]);
+const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-c27403af"]]);
 exports.MiniProgramPage = MiniProgramPage;

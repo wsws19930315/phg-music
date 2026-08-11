@@ -7,13 +7,8 @@ const utils_mesh_meshConfig = require("../../utils/mesh/meshConfig.js");
 const store_modules_user = require("../../store/modules/user.js");
 const store_modules_list = require("../../store/modules/list.js");
 const store_modules_player = require("../../store/modules/player.js");
-if (!Array) {
-  const _easycom_roc_icon_plus2 = common_vendor.resolveComponent("roc-icon-plus");
-  _easycom_roc_icon_plus2();
-}
-const _easycom_roc_icon_plus = () => "../../uni_modules/roc-icon-plus/components/roc-icon-plus/roc-icon-plus.js";
 if (!Math) {
-  (PactModal + UpdateModal + _easycom_roc_icon_plus + IndexPage + SearchPage + PlaylistPage + MyPage + SettingsPage + ShareListPage + RankPage + SonglistListPage + MusicSourcesPage + AIRecommendPage + MiniPlayer + CustomTabBar)();
+  (PactModal + UpdateModal + RocIconPlus + IndexPage + SearchPage + PlaylistPage + MyPage + SettingsPage + ShareListPage + RankPage + SonglistListPage + MusicSourcesPage + AIRecommendPage + RecognizePage + MiniPlayer + CustomTabBar)();
 }
 const IndexPage = () => "../index/index2.js";
 const SearchPage = () => "../search/index2.js";
@@ -25,10 +20,12 @@ const RankPage = () => "../rank/index2.js";
 const SonglistListPage = () => "../songlist-list/index2.js";
 const MusicSourcesPage = () => "../music-sources/index2.js";
 const AIRecommendPage = () => "../ai-recommend/index2.js";
+const RecognizePage = () => "../recognize/index2.js";
 const MiniPlayer = () => "../../components/player/MiniPlayer.js";
 const CustomTabBar = () => "../../components/common/CustomTabBar.js";
 const PactModal = () => "../../components/common/PactModal.js";
 const UpdateModal = () => "../../components/common/UpdateModal.js";
+const RocIconPlus = () => "../../uni_modules/roc-icon-plus/components/roc-icon-plus/roc-icon-plus.js";
 const TABLET_ASPECT_RATIO = 0.85;
 const TABLET_MIN_WIDTH = 400;
 const _sfc_main = {
@@ -560,6 +557,14 @@ ${logsText}`;
     common_vendor.onShow(() => {
       console.log("[Main] 页面显示");
       checkAndBroadcastTheme();
+      if (utils_mesh_meshConfig.isTestMode()) {
+        console.warn("[Main] ⚠️ 测试模式已开启，节点列表包含模拟异常节点。请前往设置 > 公共服务器列表 > 清除测试节点");
+        common_vendor.index.showToast({
+          title: "⚠️ 测试模式已开启，请前往设置清除",
+          icon: "none",
+          duration: 4e3
+        });
+      }
       setTimeout(() => {
         console.log("[Main] 开始设置状态栏文字颜色为黑色");
         utils_system.setStatusBarTextColor("black");
@@ -987,7 +992,7 @@ ${logsText}`;
       console.log("[Main] 已移除全局事件监听");
     });
     return (_ctx, _cache) => {
-      var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
+      var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l;
       return common_vendor.e({
         a: common_vendor.o(handlePactAgree, "ff"),
         b: common_vendor.o(handlePactReject, "ef"),
@@ -1101,133 +1106,134 @@ ${logsText}`;
         ai: common_vendor.o(closeSubPage, "4a")
       } : ((_f = currentSubPageUrl.value) == null ? void 0 : _f.includes("/pages/ai-recommend/index")) ? {
         ak: common_vendor.o(closeSubPage, "c5")
+      } : ((_g = currentSubPageUrl.value) == null ? void 0 : _g.includes("/pages/recognize/index")) ? {
+        am: common_vendor.o(closeSubPage, "0c")
       } : {}, {
-        ab: (_g = currentSubPageUrl.value) == null ? void 0 : _g.includes("/pages/rank/index"),
-        ae: (_h = currentSubPageUrl.value) == null ? void 0 : _h.includes("/pages/songlist-list/index"),
-        ah: (_i = currentSubPageUrl.value) == null ? void 0 : _i.includes("/pages/music-sources/index"),
-        aj: (_j = currentSubPageUrl.value) == null ? void 0 : _j.includes("/pages/ai-recommend/index"),
-        al: darkMode.value ? 1 : ""
+        ab: (_h = currentSubPageUrl.value) == null ? void 0 : _h.includes("/pages/rank/index"),
+        ae: (_i = currentSubPageUrl.value) == null ? void 0 : _i.includes("/pages/songlist-list/index"),
+        ah: (_j = currentSubPageUrl.value) == null ? void 0 : _j.includes("/pages/music-sources/index"),
+        aj: (_k = currentSubPageUrl.value) == null ? void 0 : _k.includes("/pages/ai-recommend/index"),
+        al: (_l = currentSubPageUrl.value) == null ? void 0 : _l.includes("/pages/recognize/index"),
+        an: darkMode.value ? 1 : ""
       }) : {}, {
-        am: common_vendor.o(switchTab, "b3"),
-        an: common_vendor.p({
+        ao: common_vendor.o(switchTab, "9f"),
+        ap: common_vendor.p({
           ["current-index"]: currentTab.value,
           ["is-tablet"]: isTablet.value
         }),
-        ao: showDebugLog.value
+        aq: showDebugLog.value
       }, showDebugLog.value ? common_vendor.e({
-        ap: isTablet.value
+        ar: isTablet.value
       }, isTablet.value ? {
-        aq: common_vendor.p({
+        as: common_vendor.p({
           type: "fas",
           name: "copy",
           size: "14",
           color: darkMode.value ? "#9ca3af" : "#6b7280"
         }),
-        ar: common_vendor.o(copyDebugLogs, "68")
+        at: common_vendor.o(copyDebugLogs, "a1")
       } : {}, {
-        as: common_vendor.p({
+        av: common_vendor.p({
           type: "fas",
           name: debugPanelExpanded.value ? "chevron-down" : "chevron-up",
           size: "14",
           color: darkMode.value ? "#9ca3af" : "#6b7280"
         }),
-        at: debugPanelExpanded.value
+        aw: debugPanelExpanded.value
       }, debugPanelExpanded.value ? {
-        av: common_vendor.t(debugInfo.value.followSystem),
-        aw: common_vendor.t(debugInfo.value.followSystemType),
-        ax: common_vendor.t(debugInfo.value.isFollowSystem),
-        ay: common_vendor.n(debugInfo.value.isFollowSystem ? "success" : "warning"),
-        az: common_vendor.t(debugInfo.value.darkModeStorage),
-        aA: common_vendor.t(debugInfo.value.systemTheme),
-        aB: common_vendor.t(darkMode.value),
-        aC: common_vendor.n(darkMode.value ? "dark" : "light"),
-        aD: common_vendor.t(debugInfo.value.platform),
-        aE: common_vendor.t(debugInfo.value.appTheme),
-        aF: common_vendor.t(debugInfo.value.isFirstInstall),
-        aG: common_vendor.n(debugInfo.value.isFirstInstall ? "success" : ""),
-        aH: common_vendor.t(debugInfo.value.appLaunchTime),
-        aI: common_vendor.t(themeLogs.value.length),
-        aJ: common_vendor.f(themeLogs.value, (log, index, i0) => {
+        ax: common_vendor.t(debugInfo.value.followSystem),
+        ay: common_vendor.t(debugInfo.value.followSystemType),
+        az: common_vendor.t(debugInfo.value.isFollowSystem),
+        aA: common_vendor.n(debugInfo.value.isFollowSystem ? "success" : "warning"),
+        aB: common_vendor.t(debugInfo.value.darkModeStorage),
+        aC: common_vendor.t(debugInfo.value.systemTheme),
+        aD: common_vendor.t(darkMode.value),
+        aE: common_vendor.n(darkMode.value ? "dark" : "light"),
+        aF: common_vendor.t(debugInfo.value.platform),
+        aG: common_vendor.t(debugInfo.value.appTheme),
+        aH: common_vendor.t(debugInfo.value.isFirstInstall),
+        aI: common_vendor.n(debugInfo.value.isFirstInstall ? "success" : ""),
+        aJ: common_vendor.t(debugInfo.value.appLaunchTime),
+        aK: common_vendor.t(themeLogs.value.length),
+        aL: common_vendor.f(themeLogs.value, (log, index, i0) => {
           return {
             a: common_vendor.t(log),
             b: index
           };
         }),
-        aK: common_vendor.o(onDebugLogsWheel, "11"),
-        aL: common_vendor.o(refreshDebugInfo, "11"),
-        aM: common_vendor.o(clearThemeLogs, "85"),
-        aN: common_vendor.o(() => {
-        }, "89")
+        aM: common_vendor.o(onDebugLogsWheel, "dc"),
+        aN: common_vendor.o(refreshDebugInfo, "38"),
+        aO: common_vendor.o(clearThemeLogs, "ca"),
+        aP: common_vendor.o(() => {
+        }, "55")
       } : {}, {
-        aO: darkMode.value ? 1 : "",
-        aP: debugPanelExpanded.value ? 1 : "",
-        aQ: isTablet.value ? 1 : "",
-        aR: common_vendor.o(toggleDebugPanel, "d7")
+        aQ: darkMode.value ? 1 : "",
+        aR: debugPanelExpanded.value ? 1 : "",
+        aS: isTablet.value ? 1 : "",
+        aT: common_vendor.o(toggleDebugPanel, "26")
       }) : {}, {
-        aS: showMeshModeModal.value
+        aU: showMeshModeModal.value
       }, showMeshModeModal.value ? {
-        aT: darkMode.value ? 1 : "",
-        aU: darkMode.value ? 1 : "",
-        aV: common_vendor.p({
+        aV: darkMode.value ? 1 : "",
+        aW: darkMode.value ? 1 : "",
+        aX: common_vendor.p({
           type: "fas",
           name: "server",
           size: "22",
           color: "#e2e8f0"
         }),
-        aW: darkMode.value ? 1 : "",
-        aX: darkMode.value ? 1 : "",
-        aY: common_vendor.p({
+        aY: darkMode.value ? 1 : "",
+        aZ: darkMode.value ? 1 : "",
+        ba: common_vendor.p({
           type: "fas",
           name: "chevron-right",
           size: "14",
           color: "#9ca3af"
         }),
-        aZ: darkMode.value ? 1 : "",
-        ba: common_vendor.o(($event) => selectMeshMode("own"), "91"),
-        bb: common_vendor.p({
+        bb: darkMode.value ? 1 : "",
+        bc: common_vendor.o(($event) => selectMeshMode("own"), "b4"),
+        bd: common_vendor.p({
           type: "fas",
           name: "globe",
           size: "22",
           color: "#e2e8f0"
         }),
-        bc: darkMode.value ? 1 : "",
-        bd: darkMode.value ? 1 : "",
-        be: common_vendor.p({
+        be: darkMode.value ? 1 : "",
+        bf: darkMode.value ? 1 : "",
+        bg: common_vendor.p({
           type: "fas",
           name: "chevron-right",
           size: "14",
           color: "#9ca3af"
         }),
-        bf: darkMode.value ? 1 : "",
-        bg: common_vendor.o(($event) => selectMeshMode("free"), "d0"),
         bh: darkMode.value ? 1 : "",
-        bi: darkMode.value ? 1 : "",
-        bj: common_vendor.o(copyDeployTutorial, "c2"),
+        bi: common_vendor.o(($event) => selectMeshMode("free"), "a5"),
+        bj: darkMode.value ? 1 : "",
         bk: darkMode.value ? 1 : "",
-        bl: isTablet.value ? 1 : "",
-        bm: common_vendor.o(() => {
-        }, "bc"),
+        bl: common_vendor.o(copyDeployTutorial, "b1"),
+        bm: darkMode.value ? 1 : "",
         bn: isTablet.value ? 1 : "",
-        bo: common_vendor.o(dismissMeshModal, "76")
+        bo: common_vendor.o(() => {
+        }, "98"),
+        bp: isTablet.value ? 1 : "",
+        bq: common_vendor.o(dismissMeshModal, "a6")
       } : {}, {
-        bp: showDonationPromptModal.value
+        br: showDonationPromptModal.value
       }, showDonationPromptModal.value ? {
-        bq: common_vendor.p({
+        bs: common_vendor.p({
           type: "fas",
           name: "heart",
           size: "24",
           color: "#e2e8f0"
         }),
-        br: darkMode.value ? 1 : "",
-        bs: darkMode.value ? 1 : "",
         bt: darkMode.value ? 1 : "",
-        bv: common_vendor.t(donationStats.value.remaining),
+        bv: darkMode.value ? 1 : "",
         bw: darkMode.value ? 1 : "",
-        bx: darkMode.value ? 1 : "",
-        by: common_vendor.t(donationStats.value.used),
-        bz: common_vendor.t(donationStats.value.total),
-        bA: darkMode.value ? 1 : "",
-        bB: darkMode.value ? 1 : "",
+        bx: common_vendor.t(donationStats.value.remaining),
+        by: darkMode.value ? 1 : "",
+        bz: darkMode.value ? 1 : "",
+        bA: common_vendor.t(donationStats.value.used),
+        bB: common_vendor.t(donationStats.value.total),
         bC: darkMode.value ? 1 : "",
         bD: darkMode.value ? 1 : "",
         bE: darkMode.value ? 1 : "",
@@ -1235,47 +1241,49 @@ ${logsText}`;
         bG: darkMode.value ? 1 : "",
         bH: darkMode.value ? 1 : "",
         bI: darkMode.value ? 1 : "",
-        bJ: common_vendor.o(dismissDonationPrompt, "17"),
-        bK: common_vendor.o(goToDonationSettings, "db"),
-        bL: darkMode.value ? 1 : "",
-        bM: common_vendor.o(() => {
-        }, "8a"),
-        bN: common_vendor.o(dismissDonationPrompt, "02")
+        bJ: darkMode.value ? 1 : "",
+        bK: darkMode.value ? 1 : "",
+        bL: common_vendor.o(dismissDonationPrompt, "a0"),
+        bM: common_vendor.o(goToDonationSettings, "4d"),
+        bN: darkMode.value ? 1 : "",
+        bO: common_vendor.o(() => {
+        }, "2c"),
+        bP: common_vendor.o(dismissDonationPrompt, "45")
       } : {}, {
-        bO: showServerGuideModal.value
+        bQ: showServerGuideModal.value
       }, showServerGuideModal.value ? {
-        bP: common_vendor.p({
+        bR: common_vendor.p({
           type: "fas",
           name: "server",
           size: "24",
           color: "#e2e8f0"
         }),
-        bQ: darkMode.value ? 1 : "",
-        bR: darkMode.value ? 1 : "",
-        bS: common_vendor.t(serverGuideSongCount.value),
-        bT: common_vendor.t(serverGuideHelperCount.value),
-        bU: darkMode.value ? 1 : "",
-        bV: darkMode.value ? 1 : "",
+        bS: darkMode.value ? 1 : "",
+        bT: darkMode.value ? 1 : "",
+        bU: common_vendor.t(serverGuideSongCount.value),
+        bV: common_vendor.t(serverGuideHelperCount.value),
         bW: darkMode.value ? 1 : "",
         bX: darkMode.value ? 1 : "",
         bY: darkMode.value ? 1 : "",
         bZ: darkMode.value ? 1 : "",
-        ca: common_vendor.o(dismissServerGuide, "9d"),
-        cb: common_vendor.o(goToServerDeploy, "e4"),
-        cc: darkMode.value ? 1 : "",
-        cd: common_vendor.o(() => {
-        }, "41"),
-        ce: common_vendor.o(dismissServerGuide, "e9")
+        ca: darkMode.value ? 1 : "",
+        cb: darkMode.value ? 1 : "",
+        cc: common_vendor.o(dismissServerGuide, "99"),
+        cd: common_vendor.o(goToServerDeploy, "23"),
+        ce: darkMode.value ? 1 : "",
+        cf: common_vendor.o(() => {
+        }, "9a"),
+        cg: common_vendor.o(dismissServerGuide, "1a")
       } : {}, {
-        cf: showCopyToast.value
+        ch: showCopyToast.value
       }, showCopyToast.value ? {
-        cg: common_vendor.t(copyToastText.value)
+        ci: common_vendor.t(copyToastText.value)
       } : {}, {
-        ch: darkMode.value ? 1 : "",
-        ci: isTablet.value ? 1 : ""
+        cj: darkMode.value ? 1 : "",
+        ck: isTablet.value ? 1 : ""
       });
     };
   }
 };
-const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-55921151"]]);
+const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-734c9555"]]);
 wx.createPage(MiniProgramPage);

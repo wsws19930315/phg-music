@@ -31,6 +31,8 @@ const _sfc_main = {
       showUserAgreementPopup: false,
       showCompatModal: false,
       compatModalData: null,
+      // 帮助与反馈弹窗
+      showHelpFeedbackPopup: false,
       // 更新弹窗
       showUpdatePopup: false,
       updateInfo: null,
@@ -296,6 +298,11 @@ const _sfc_main = {
       this.showBackButton = true;
       this._needOpenAIApiConfig = true;
     }
+    if (options && options.showServerModal === "true") {
+      console.log("[Settings] onLoad: 检测到showServerModal参数");
+      this.showBackButton = true;
+      this._needOpenServerModal = true;
+    }
   },
   beforeUnmount() {
     common_vendor.index.$off("systemThemeChange", this.handleSystemThemeChange);
@@ -331,6 +338,26 @@ const _sfc_main = {
       this._needOpenAIApiConfig = false;
       setTimeout(() => {
         this.showAIApiConfig();
+      }, 500);
+    }
+    let needOpenServerModal = this._needOpenServerModal;
+    if (!needOpenServerModal) {
+      try {
+        const pages = getCurrentPages();
+        const currentPage = pages[pages.length - 1];
+        if (currentPage && currentPage.options && currentPage.options.showServerModal === "true") {
+          needOpenServerModal = true;
+          this.showBackButton = true;
+        }
+      } catch (e) {
+        console.log("[Settings] getCurrentPages 兜底获取参数失败", e);
+      }
+    }
+    if (needOpenServerModal) {
+      console.log("[Settings] 检测到showServerModal参数，自动打开添加服务器地址弹窗");
+      this._needOpenServerModal = false;
+      setTimeout(() => {
+        this.showServerModal();
       }, 500);
     }
     common_vendor.index.$on("sleepTimerUpdate", this.handleSleepTimerUpdate);
@@ -1241,6 +1268,7 @@ const _sfc_main = {
         success: () => {
           console.log("[Settings] 链接已复制到剪贴板");
           this.showCustomToast("链接已复制，请在浏览器打开");
+          common_vendor.index.hideToast();
         },
         fail: (err) => {
           console.error("[Settings] 复制失败:", err);
@@ -1714,6 +1742,7 @@ const _sfc_main = {
       }
       const origin = utils_config.getServerOrigin();
       const apiKey = utils_config.getApiKey();
+      common_vendor.index.showLoading({ title: "正在测试服务器连接...", mask: true });
       try {
         const scriptsRes = await common_vendor.index.request({
           url: `${origin}/${apiKey}/api/scripts/loaded`,
@@ -1721,6 +1750,7 @@ const _sfc_main = {
           timeout: 1e4
         });
         if (scriptsRes.statusCode !== 200 || ((_a = scriptsRes.data) == null ? void 0 : _a.code) !== 200) {
+          common_vendor.index.hideLoading();
           common_vendor.index.showToast({ title: "无法连接服务器", icon: "none" });
           return;
         }
@@ -1728,6 +1758,7 @@ const _sfc_main = {
         this.currentMeshMode = "own";
         const scripts = scriptsRes.data.data || [];
         if (scripts.length === 0) {
+          common_vendor.index.hideLoading();
           this.closeFreeNodesPopup();
           common_vendor.index.$emit("needImportScripts");
           common_vendor.index.showToast({ title: "已切换到专属服务器模式", icon: "success" });
@@ -1752,15 +1783,18 @@ const _sfc_main = {
           console.log("[Settings] 获取 /status 失败:", e);
         }
         if (serverVersionCode < utils_config.MIN_SERVER_VERSION_CODE) {
+          common_vendor.index.hideLoading();
           this.handleShowCompatModal({
             title: "服务器版本过低",
             content: serverVersion !== "未知" && serverVersion !== "旧版" ? `当前服务器版本 v${serverVersion}，部分功能可能异常，建议升级服务端到 v${utils_config.MIN_SERVER_VERSION} 以上` : `服务器版本过低，部分功能可能异常，建议升级服务端到 v${utils_config.MIN_SERVER_VERSION} 以上`
           });
           common_vendor.index.showToast({ title: "已切换到专属服务器模式（版本过低）", icon: "none" });
         } else {
+          common_vendor.index.hideLoading();
           common_vendor.index.showToast({ title: "已切换到专属服务器模式", icon: "success" });
         }
       } catch (e) {
+        common_vendor.index.hideLoading();
         common_vendor.index.showToast({ title: "连接服务器失败", icon: "none" });
       }
     },
@@ -1958,11 +1992,29 @@ const _sfc_main = {
     closeUserAgreementPopup() {
       this.showUserAgreementPopup = false;
     },
-    // 打开帮助与反馈
+    // 打开帮助与反馈弹窗
     openHelpAndFeedback() {
-      common_vendor.index.showToast({
-        title: "帮助与反馈开发中",
-        icon: "none"
+      this.showHelpFeedbackPopup = true;
+    },
+    // 关闭帮助与反馈弹窗
+    closeHelpAndFeedbackPopup() {
+      this.showHelpFeedbackPopup = false;
+    },
+    // 复制QQ群号到剪贴板
+    copyQQGroupNumber() {
+      const qqGroupNumber = "1016773775";
+      common_vendor.index.setClipboardData({
+        data: qqGroupNumber,
+        showToast: false,
+        success: () => {
+          console.log("[Settings] QQ群号已复制到剪贴板");
+          this.showCustomToast("群号已复制，请在QQ中搜索加入");
+          common_vendor.index.hideToast();
+        },
+        fail: (err) => {
+          console.error("[Settings] 复制QQ群号失败:", err);
+          this.showCustomToast("复制失败，请手动复制群号：1016773775");
+        }
       });
     },
     // 检查更新
@@ -2715,53 +2767,79 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     }, "33"),
     eS: common_vendor.o((...args) => $options.closeAboutPopup && $options.closeAboutPopup(...args), "38")
   } : {}, {
-    eT: $data.showUserAgreementPopup
-  }, $data.showUserAgreementPopup ? common_vendor.e({
-    eU: $data.pactAgreed
-  }, $data.pactAgreed ? {
+    eT: $data.showHelpFeedbackPopup
+  }, $data.showHelpFeedbackPopup ? {
+    eU: common_vendor.p({
+      type: "fas",
+      name: "headset",
+      size: "20",
+      color: "#ffffff"
+    }),
     eV: common_vendor.p({
+      type: "fab",
+      name: "qq",
+      size: "24",
+      color: "#00d7cd"
+    }),
+    eW: common_vendor.p({
+      type: "fas",
+      name: "copy",
+      size: "16",
+      color: "#00d7cd"
+    }),
+    eX: common_vendor.o((...args) => $options.copyQQGroupNumber && $options.copyQQGroupNumber(...args), "01"),
+    eY: common_vendor.o((...args) => $options.closeHelpAndFeedbackPopup && $options.closeHelpAndFeedbackPopup(...args), "9f"),
+    eZ: common_vendor.o(() => {
+    }, "6a"),
+    fa: common_vendor.o((...args) => $options.closeHelpAndFeedbackPopup && $options.closeHelpAndFeedbackPopup(...args), "bb")
+  } : {}, {
+    fb: $data.showUserAgreementPopup
+  }, $data.showUserAgreementPopup ? common_vendor.e({
+    fc: $data.pactAgreed
+  }, $data.pactAgreed ? {
+    fd: common_vendor.p({
       type: "fas",
       name: "check-circle",
       size: "14",
       color: "#10b981"
     })
   } : {}, {
-    eW: $data.pactAgreed
+    fe: $data.pactAgreed
   }, $data.pactAgreed ? {
-    eX: common_vendor.p({
+    ff: common_vendor.p({
       type: "fas",
       name: "info-circle",
       size: "16",
       color: "#e2e8f0"
     }),
-    eY: common_vendor.t($options.pactAgreedTime)
+    fg: common_vendor.t($options.pactAgreedTime)
   } : {}, {
-    eZ: common_vendor.o((...args) => $options.closeUserAgreementPopup && $options.closeUserAgreementPopup(...args), "c8"),
-    fa: common_vendor.o(() => {
-    }, "94"),
-    fb: common_vendor.o((...args) => $options.closeUserAgreementPopup && $options.closeUserAgreementPopup(...args), "a0")
+    fh: common_vendor.o((...args) => $options.closeUserAgreementPopup && $options.closeUserAgreementPopup(...args), "d1"),
+    fi: common_vendor.o(() => {
+    }, "03"),
+    fj: common_vendor.o((...args) => $options.closeUserAgreementPopup && $options.closeUserAgreementPopup(...args), "34")
   }) : {}, {
-    fc: common_vendor.o($options.closeUpdatePopup, "88"),
-    fd: common_vendor.p({
+    fk: common_vendor.o($options.closeUpdatePopup, "0a"),
+    fl: common_vendor.p({
       visible: $data.showUpdatePopup,
       ["update-info"]: $data.updateInfo,
       ["dark-mode"]: $data.darkMode
     }),
-    fe: $data.copyToastVisible
+    fm: $data.copyToastVisible
   }, $data.copyToastVisible ? {
-    ff: common_vendor.t($data.copyToastText)
+    fn: common_vendor.t($data.copyToastText)
   } : {}, {
-    fg: $data.showCompatModal
+    fo: $data.showCompatModal
   }, $data.showCompatModal ? {
-    fh: common_vendor.t(((_a = $data.compatModalData) == null ? void 0 : _a.title) || "版本兼容性提示"),
-    fi: common_vendor.t((_b = $data.compatModalData) == null ? void 0 : _b.content),
-    fj: common_vendor.o((...args) => $options.closeCompatModal && $options.closeCompatModal(...args), "05"),
-    fk: common_vendor.o(() => {
-    }, "4b"),
-    fl: common_vendor.o((...args) => $options.closeCompatModal && $options.closeCompatModal(...args), "ac")
+    fp: common_vendor.t(((_a = $data.compatModalData) == null ? void 0 : _a.title) || "版本兼容性提示"),
+    fq: common_vendor.t((_b = $data.compatModalData) == null ? void 0 : _b.content),
+    fr: common_vendor.o((...args) => $options.closeCompatModal && $options.closeCompatModal(...args), "2a"),
+    fs: common_vendor.o(() => {
+    }, "39"),
+    ft: common_vendor.o((...args) => $options.closeCompatModal && $options.closeCompatModal(...args), "2d")
   } : {}, {
-    fm: $data.darkMode ? 1 : "",
-    fn: $options.isTablet ? 1 : ""
+    fv: $data.darkMode ? 1 : "",
+    fw: $options.isTablet ? 1 : ""
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

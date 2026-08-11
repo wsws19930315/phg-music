@@ -18,6 +18,7 @@ if (!Math) {
   "./pages/settings/index.js";
   "./pages/sharelist/index.js";
   "./pages/songlist-list/index.js";
+  "./pages/recognize/index.js";
   "./pages/player/index.js";
 }
 const _sfc_main = {

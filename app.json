@@ -10,7 +10,8 @@
     "pages/ai-recommend/index",
     "pages/settings/index",
     "pages/sharelist/index",
-    "pages/songlist-list/index"
+    "pages/songlist-list/index",
+    "pages/recognize/index"
   ],
   "subPackages": [
     {
