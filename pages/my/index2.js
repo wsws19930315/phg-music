@@ -1,3 +1,1 @@
-"use strict";
-const index = require("../../index6.js");
-wx.createPage(index.MiniProgramPage);
+"use strict";const e=require("../../index6.js");wx.createPage(e.MiniProgramPage);

@@ -1,0 +1,1 @@
+"use strict";const u=(n=0)=>{if(typeof document>"u")return;const t=e=>{e.stopPropagation(),typeof e.preventDefault=="function"&&e.preventDefault()},c=()=>document.removeEventListener("click",t,!0);document.addEventListener("click",t,{capture:!0,once:!0}),setTimeout(c,n)};exports.DRAG_MOVE_THRESHOLD=4;exports.suppressNextClick=u;

@@ -7,6 +7,8 @@
     "danmaku-view": "../../components/danmaku/DanmakuView",
     "music-comment": "../../components/comment/MusicComment",
     "music-toggle-modal": "../../components/player/MusicToggleModal",
-    "favorite-popup": "../../components/common/FavoritePopup"
+    "favorite-popup": "../../components/common/FavoritePopup",
+    "music-turntable": "../../components/turntable/MusicTurntable",
+    "custom-confirm-dialog": "../../components/common/CustomConfirmDialog"
   }
 }

@@ -11,7 +11,9 @@
     "pages/settings/index",
     "pages/sharelist/index",
     "pages/songlist-list/index",
-    "pages/recognize/index"
+    "pages/recognize/index",
+    "pages/sync/index",
+    "pages/account/index"
   ],
   "subPackages": [
     {

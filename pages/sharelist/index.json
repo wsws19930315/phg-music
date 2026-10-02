@@ -5,6 +5,7 @@
   "usingComponents": {
     "roc-icon-plus": "../../uni_modules/roc-icon-plus/components/roc-icon-plus/roc-icon-plus",
     "mini-player": "../../components/player/MiniPlayer",
-    "virtual-list": "../../components/common/VirtualList"
+    "virtual-list": "../../components/common/VirtualList",
+    "custom-confirm-dialog": "../../components/common/CustomConfirmDialog"
   }
 }

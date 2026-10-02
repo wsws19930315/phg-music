@@ -4,6 +4,7 @@
   "launchMode": "singleTask",
   "usingComponents": {
     "update-modal": "../../components/common/UpdateModal",
+    "custom-confirm-dialog": "../../components/common/CustomConfirmDialog",
     "roc-icon-plus": "../../uni_modules/roc-icon-plus/components/roc-icon-plus/roc-icon-plus"
   }
 }

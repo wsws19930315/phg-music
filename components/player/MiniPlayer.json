@@ -1,7 +1,9 @@
 {
   "component": true,
+  "styleIsolation": "apply-shared",
   "usingComponents": {
     "roc-icon-plus": "../../uni_modules/roc-icon-plus/components/roc-icon-plus/roc-icon-plus",
-    "favorite-popup": "../common/FavoritePopup"
+    "favorite-popup": "../common/FavoritePopup",
+    "custom-confirm-dialog": "../common/CustomConfirmDialog"
   }
 }

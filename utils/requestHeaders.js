@@ -1,0 +1,1 @@
+"use strict";const t=require("../common/vendor.js");function s(r){return r}function a(r={}){const e={...r};return e.header&&(e.header=e.header),t.index.request(e)}exports.filterHeadersForPlatform=s;exports.requestWithSafeHeaders=a;

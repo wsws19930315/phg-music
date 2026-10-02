@@ -1,3 +1,1 @@
-"use strict";
-const index = require("../../index3.js");
-wx.createPage(index._sfc_main);
+"use strict";const e=require("../../index3.js");wx.createPage(e._sfc_main);
