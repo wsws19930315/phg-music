@@ -1,0 +1,5 @@
+# 内部开发文档与验证工具（不随发布仓分发）
+doc/local-import/
+doc/local-runner/
+doc/script-pull/
+doc/logo-generator.html

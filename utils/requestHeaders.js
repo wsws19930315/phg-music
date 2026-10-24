@@ -1,1 +1,1 @@
-"use strict";const t=require("../common/vendor.js");function s(r){return r}function a(r={}){const e={...r};return e.header&&(e.header=e.header),t.index.request(e)}exports.filterHeadersForPlatform=s;exports.requestWithSafeHeaders=a;
+"use strict";const o=require("../common/vendor.js"),n=["User-Agent","Referer","Origin"];function s(r){const e={...r};for(const t of n)delete e[t],delete e[t.toLowerCase()];return e}function a(r={}){const e={...r};return e.header&&(e.header=s(e.header)),o.index.request(e)}exports.filterHeadersForPlatform=s;exports.requestWithSafeHeaders=a;

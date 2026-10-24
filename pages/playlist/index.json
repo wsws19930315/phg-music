@@ -1,7 +1,6 @@
 {
   "navigationBarTitleText": "列表",
   "navigationStyle": "custom",
-  "launchMode": "singleTask",
   "usingComponents": {
     "roc-icon-plus": "../../uni_modules/roc-icon-plus/components/roc-icon-plus/roc-icon-plus",
     "music-toggle-modal": "../../components/player/MusicToggleModal",

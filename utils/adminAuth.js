@@ -1,0 +1,1 @@
+"use strict";const n=require("../common/vendor.js"),e="sync_token",t="sync_role";function c(){try{return n.index.getStorageSync(e)?n.index.getStorageSync(t)==="admin":!1}catch{return!1}}exports.isAdminAccount=c;

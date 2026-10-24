@@ -3,7 +3,6 @@
   "navigationStyle": "custom",
   "enablePullDownRefresh": false,
   "backgroundTextStyle": "@backgroundTextStyle",
-  "launchMode": "singleTask",
   "usingComponents": {
     "index-page": "../index/index",
     "search-page": "../search/index",

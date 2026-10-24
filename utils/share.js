@@ -1,0 +1,1 @@
+"use strict";const s=require("../common/vendor.js"),t=require("./format.js");function n(e){s.index.share({provider:"weixin",scene:"WXSceneSession",type:0,title:e.name,summary:t.formatArtists(e.artists),imageUrl:e.album.picUrl,success:function(i){console.log("分享成功："+JSON.stringify(i))},fail:function(i){console.log("分享失败："+JSON.stringify(i))}})}exports.shareSongToWechat=n;

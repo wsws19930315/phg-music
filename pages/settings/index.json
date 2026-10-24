@@ -1,7 +1,6 @@
 {
   "navigationBarTitleText": "设置",
   "navigationStyle": "custom",
-  "launchMode": "singleTask",
   "usingComponents": {
     "update-modal": "../../components/common/UpdateModal",
     "custom-confirm-dialog": "../../components/common/CustomConfirmDialog",

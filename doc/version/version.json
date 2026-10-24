@@ -1,24 +1,77 @@
 {
-  "version": "1.0.11",
-  "versionCode": 1011,
-  "desc": "发布1.0.11版\n1.新增听歌识曲功能(需要搭配cloudflare 最新版本服务器)\n2.修复AI推荐歌曲功能重复率过高问题\n3.修复鼠标右键不能粘贴问题\n4.修复若干小bug\n———————————————————————\n下个版本1.0.12开发计划：\n1.完善用户登录体系，并完成用户数据的云同步功能", 
-  "releaseUrl": "https://github.com/erikjamesgz/phg-music/releases",
-  "projectUrl": "https://github.com/erikjamesgz/phg-music",
+  "version": "2.0.0",
+  "versionCode": 2000,
+  "desc": "发布2.0.0版本 （ios用户没有安装包，需要下载源码编译后微信扫码使用）\n新增本地运行音源插件模式（Android / Windows / macOS / Linux环境）（部分功能需搭配最新版服务器）\n新增桌面端自动升级（Windows / macOS / Linux环境）\n新增切歌防连点\n优化播放失败自动重试、停止播放 逻辑\n优化大歌单卡顿问题\n修复音质标识与实际不符等问题\n修复若干小 bug",
+  "releaseUrl": "https://codeberg.org/erikjamesgz/phg-music/releases",
+  "projectUrl": "https://codeberg.org/erikjamesgz/phg-music",
   "platforms": {
     "android": {
-      "downloadUrl": "https://github.com/erikjamesgz/phg-music/releases/download/phg-music-v1.0.11-release/phg-music-android-v1.0.11-release-20260811.apk"
+      "version": "2.0.0",
+      "versionCode": 2000,
+      "downloadUrl": "https://codeberg.org/erikjamesgz/phg-music/releases/download/phg-music-v2.0.0-release/phg-music-android-v2.0.0-release-20261024.apk"
     },
     "ios": {
       "downloadUrl": ""
     },
     "windows": {
-      "downloadUrl": ""
+      "version": "2.0.0",
+      "downloads": {
+        "x64": {
+          "url": "https://codeberg.org/erikjamesgz/phg-music/releases/download/phg-music-v2.0.0-release/phg-music-win-v2.0.0-release.exe",
+          "sha256": "267488711904632975be3a0f552ce23394a7fc465fa59fb5c47d0da4e4637abb",
+          "size": 94895144
+        }
+      }
     },
     "linux": {
-      "downloadUrl": ""
+      "version": "2.0.0",
+      "downloads": {
+        "x64": {
+          "deb": {
+            "url": "https://codeberg.org/erikjamesgz/phg-music/releases/download/phg-music-v2.0.0-release/phg-music-linux-v2.0.0-amd64.deb",
+            "sha256": "f8621daedc49ea98c2c6cf574e91efa65a3da1efb9375397905f1dd6149d72fe",
+            "size": 77458138
+          },
+          "appimage": {
+            "url": "https://codeberg.org/erikjamesgz/phg-music/releases/download/phg-music-v2.0.0-release/phg-music-linux-v2.0.0-x86_64.AppImage",
+            "sha256": "89ffc9fe5a5f61a6825e118dc5a60af5648bcbea363b2e6b1a14f32bff6ef4c1",
+            "size": 86630571
+          },
+          "url": "https://codeberg.org/erikjamesgz/phg-music/releases/download/phg-music-v2.0.0-release/phg-music-linux-v2.0.0-amd64.deb",
+          "sha256": "f8621daedc49ea98c2c6cf574e91efa65a3da1efb9375397905f1dd6149d72fe",
+          "size": 77458138
+        },
+        "arm64": {
+          "appimage": {
+            "url": "https://codeberg.org/erikjamesgz/phg-music/releases/download/phg-music-v2.0.0-release/phg-music-linux-v2.0.0-arm64.AppImage",
+            "sha256": "a72fc8d4ae53eaf1ae7b6181f0583673d161a535d0a886988baddd43003e67e5",
+            "size": 80699992
+          },
+          "deb": {
+            "url": "https://codeberg.org/erikjamesgz/phg-music/releases/download/phg-music-v2.0.0-release/phg-music-linux-v2.0.0-arm64.deb",
+            "sha256": "8f3df653221d28d2db0c5499b6fe973788ae3c27b40d548066c26f0891cf4427",
+            "size": 72464186
+          },
+          "url": "https://codeberg.org/erikjamesgz/phg-music/releases/download/phg-music-v2.0.0-release/phg-music-linux-v2.0.0-arm64.deb",
+          "sha256": "8f3df653221d28d2db0c5499b6fe973788ae3c27b40d548066c26f0891cf4427",
+          "size": 72464186
+        }
+      }
     },
     "macos": {
-      "downloadUrl": ""
+      "version": "2.0.0",
+      "downloads": {
+        "arm64": {
+          "url": "https://codeberg.org/erikjamesgz/phg-music/releases/download/phg-music-v2.0.0-release/phg-music-mac-v2.0.0-arm64.dmg",
+          "sha256": "b4bb07bc8da54a9b8c31216985d11e835a9b69e49cf0692b318d9418d8f7b974",
+          "size": 97322652
+        },
+        "x64": {
+          "url": "https://codeberg.org/erikjamesgz/phg-music/releases/download/phg-music-v2.0.0-release/phg-music-mac-v2.0.0-x64.dmg",
+          "sha256": "98fa06860485ba6ad6213c2e7bdf28416220360fef9775ded9455ac3c7ea1eef",
+          "size": 103838607
+        }
+      }
     }
   }
 }
